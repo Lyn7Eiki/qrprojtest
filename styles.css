@@ -30,7 +30,7 @@ body {
 /* Layout */
 .app-container {
     display: grid;
-    grid-template-areas: 
+    grid-template-areas:
         "main sidebar"
         "nav nav";
     grid-template-columns: 1fr var(--sidebar-width);
@@ -293,11 +293,13 @@ body {
     overflow-x: auto;
     width: 100%;
     padding: 0.5rem 0;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
+    /* Firefox */
 }
 
 .nav-scroll::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    display: none;
+    /* Chrome/Safari */
 }
 
 .nav-item {
@@ -474,11 +476,87 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile Responsiveness */
+.hidden-desktop {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .hidden-desktop {
+        display: block;
+    }
+
+    .app-container {
+        grid-template-areas:
+            "content"
+            "nav";
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr var(--nav-height);
+    }
+
+    /* Default Mobile State: Show List (Sidebar), Hide Detail (Main) */
+    .main-content {
+        display: none;
+        grid-area: content;
+        padding: 1rem;
+        width: 100%;
+    }
+
+    .right-sidebar {
+        display: flex;
+        grid-area: content;
+        width: 100%;
+        border-left: none;
+    }
+
+    /* Detail View State */
+    .app-container.show-detail .main-content {
+        display: flex;
+    }
+
+    .app-container.show-detail .right-sidebar {
+        display: none;
+    }
+
+    /* Adjustments */
+    .qr-section {
+        padding: 1rem;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full-width {
+        grid-column: span 1;
+    }
+
+    .mobile-nav {
+        margin-bottom: 1rem;
+    }
+
+    .top-bar h1 {
+        font-size: 1.25rem;
+    }
 }

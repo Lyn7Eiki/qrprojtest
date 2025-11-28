@@ -39,6 +39,7 @@ const els = {
 
     // Buttons
     addBtn: document.getElementById('addBtn'),
+    backBtn: document.getElementById('backBtn'),
     editBtn: document.getElementById('editBtn'),
     deleteBtn: document.getElementById('deleteBtn'),
 
@@ -146,12 +147,22 @@ window.setCategory = (catId) => {
     renderCategories();
     renderDeviceList();
     renderDetails();
+    // Mobile: Ensure we are in list view
+    document.querySelector('.app-container').classList.remove('show-detail');
 };
 
 window.selectDevice = (devId) => {
     state.selectedDeviceId = devId;
     renderDeviceList(); // Re-render to update active state
     renderDetails();
+    // Mobile: Switch to detail view
+    if (window.innerWidth <= 768) {
+        document.querySelector('.app-container').classList.add('show-detail');
+    }
+};
+
+window.backToList = () => {
+    document.querySelector('.app-container').classList.remove('show-detail');
 };
 
 window.openCategoryModal = () => {
@@ -169,6 +180,7 @@ function setupEventListeners() {
 
     // Modal Controls
     els.addBtn.addEventListener('click', () => openModal());
+    if (els.backBtn) els.backBtn.addEventListener('click', backToList);
     els.editBtn.addEventListener('click', () => openModal(state.selectedDeviceId));
     els.deleteBtn.addEventListener('click', () => openDeleteModal());
 

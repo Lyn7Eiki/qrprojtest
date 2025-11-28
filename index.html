@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>离线二维码管理工具 by Antigravity</title>
+    <title>设备管理系统</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- Using FontAwesome for Icons -->
@@ -28,6 +28,9 @@
             </div>
 
             <div id="deviceDetails" class="device-details hidden">
+                <div class="mobile-nav hidden-desktop">
+                    <button id="backBtn" class="btn btn-text"><i class="fas fa-arrow-left"></i> 返回列表</button>
+                </div>
                 <div class="qr-section">
                     <div class="qr-card">
                         <div id="qrCodeDisplay" class="qr-placeholder">
@@ -177,6 +180,5 @@
 
     <script src="script.js"></script>
 </body>
-
 
 </html>
