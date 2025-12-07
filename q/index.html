@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Visualizer</title>
+    <title>新建二维码工具：Q</title>
     <script src="../vue.global.js"></script>
     <script src="../qrcode.min.js"></script>
     <style>
@@ -322,6 +322,10 @@
             top: 20px;
             right: 20px;
             display: flex;
+            flex-direction: column;
+            /* 改为纵向排列 */
+            align-items: flex-end;
+            /* 靠右对齐 */
             gap: 10px;
             opacity: 0.2;
             transition: opacity 0.3s;
@@ -338,6 +342,13 @@
             cursor: pointer;
             border-radius: 4px;
             font-size: 0.8rem;
+            text-decoration: none;
+            /* 如果是链接也能像按钮一样 */
+            color: #333;
+            display: block;
+            /* 确保占满行或块状 */
+            width: fit-content;
+            text-align: center;
         }
 
         /* 模态框样式 */
@@ -414,6 +425,11 @@
             <button class="control-btn" @click="resetData">重置</button>
             <button class="control-btn" @click="triggerImport">导入</button>
             <input type="file" id="fileInput" style="display:none" @change="handleImport">
+
+            <!-- 新增的三个按钮 -->
+            <a class="control-btn" href="../反应/index2.html">反应</a>
+            <button class="control-btn" @click="clearSelection">清空</button>
+            <a class="control-btn" href="../超滤/index.html">超滤</a>
         </div>
 
         <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
@@ -544,10 +560,17 @@
                     if (file) reader.readAsText(file);
                 };
 
+                // 新增：清空选择
+                const clearSelection = () => {
+                    currentTag.value = '';
+                    currentItem.value = null;
+                };
+
                 return {
                     items, allTags, currentTag, currentList, currentItem,
                     selectTag, selectItem,
-                    showModal, form, openCreateModal, saveItem, resetData, triggerImport, handleImport
+                    showModal, form, openCreateModal, saveItem, resetData, triggerImport, handleImport,
+                    clearSelection
                 };
             }
         }).mount('#app');
