@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新建二维码工具：Q</title>
+    <title>新二维码工具：Q</title>
     <script src="../vue.global.js"></script>
     <script src="../qrcode.min.js"></script>
     <style>
@@ -317,18 +317,216 @@
         }
 
         /* 功能按钮悬浮 */
+        font-weight: bold;
+        }
+
+        .list-item.active .radio-circle {
+            border-color: var(--color-active);
+        }
+
+        .list-item.active .radio-circle::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--color-active);
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* 列表未选中状态 */
+        .list-item:not(.active) .radio-circle::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: transparent;
+            border-radius: 50%;
+        }
+
+
+        /* 下半部分：分类标签区 */
+        .bottom-section {
+            height: 180px;
+            /* 给足够高度放竖排文字 */
+            border-top: 1px solid #eee;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            padding: 10px 20px;
+            gap: 5px;
+        }
+
+        .tag-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            min-width: 50px;
+        }
+
+        .tag-icon-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--color-inactive);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .tag-item.active .tag-icon-circle {
+            border-color: var(--color-active);
+            background: transparent;
+        }
+
+        .tag-item.active .tag-icon-circle::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--color-active);
+        }
+
+        .tag-item:not(.active) .tag-icon-circle::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid var(--color-inactive);
+        }
+
+        .tag-text {
+            writing-mode: vertical-lr;
+            /* 竖排文字 */
+            font-size: 1rem;
+            letter-spacing: 4px;
+            color: var(--color-text);
+            height: 100px;
+            /* 固定文字区域高度 */
+            text-align: center;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* 手机端适配 Media Queries */
+        @media (max-width: 768px) {
+            .upper-section {
+                flex-direction: column;
+                /* 上下排列 */
+                padding: 10px;
+                gap: 5px;
+            }
+
+            .display-area {
+                flex: none;
+                /* 不再自动伸缩，由内容决定 */
+                height: auto;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .qr-card {
+                width: 100%;
+                /* 宽度占满 */
+                max-width: 320px;
+                /* 限制最大宽度 */
+                margin: 0 auto;
+                /* 居中 */
+            }
+
+            .qr-visualization {
+                padding: 10px;
+            }
+
+            .qr-info-bar {
+                padding: 10px 0;
+            }
+
+            .qr-title {
+                font-size: 1.4rem;
+            }
+
+            .qr-code-text {
+                font-size: 1rem;
+            }
+
+            .list-area {
+                width: 100%;
+                /* 列表全宽 */
+                padding-left: 0;
+                padding-right: 0;
+                border-left: none;
+                flex: 1;
+                /* 占据剩余高度 */
+                justify-content: flex-start;
+                /* 手机上从顶部开始排，避免太少时居中奇怪 */
+                overflow-y: auto;
+            }
+
+            .list-item {
+                font-size: 1rem;
+                padding: 8px 10px;
+                background: #f9f9f9;
+                /* 给列表项一点背景区分 */
+                border-radius: 6px;
+                margin-bottom: 0;
+                border: 1px solid transparent;
+            }
+
+            .list-item.active {
+                background: #eff6ff;
+                border-color: #bfdbfe;
+            }
+
+            .bottom-section {
+                height: 130px;
+                /* 稍微减小高度 */
+                padding: 5px 10px;
+            }
+
+            .tag-text {
+                font-size: 0.9rem;
+                height: 70px;
+                letter-spacing: 2px;
+            }
+
+            /* 手机上隐藏半透明控制按钮，或者显示得更明显一点 */
+            .floating-controls {
+                opacity: 0.6;
+            }
+        }
+
+        /* 功能按钮悬浮 */
         .floating-controls {
             position: fixed;
             top: 20px;
             right: 20px;
             display: flex;
             flex-direction: column;
-            /* 改为纵向排列 */
+            gap: 5px;
             align-items: flex-end;
-            /* 靠右对齐 */
-            gap: 10px;
             opacity: 0.2;
             transition: opacity 0.3s;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
         }
 
         .floating-controls:hover {
@@ -342,13 +540,6 @@
             cursor: pointer;
             border-radius: 4px;
             font-size: 0.8rem;
-            text-decoration: none;
-            /* 如果是链接也能像按钮一样 */
-            color: #333;
-            display: block;
-            /* 确保占满行或块状 */
-            width: fit-content;
-            text-align: center;
         }
 
         /* 模态框样式 */
@@ -421,15 +612,17 @@
         </div>
 
         <div class="floating-controls">
-            <button class="control-btn" @click="openCreateModal">+ 新增</button>
-            <button class="control-btn" @click="resetData">重置</button>
-            <button class="control-btn" @click="triggerImport">导入</button>
+            <div class="control-row">
+                <button class="control-btn" @click="openCreateModal">+ 新增</button>
+                <button class="control-btn" @click="resetData">重置</button>
+                <button class="control-btn" @click="triggerImport">导入</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" @click="loadFyData">反应</button>
+                <button class="control-btn" @click="resetData">清空</button>
+                <button class="control-btn" @click="loadQclData">超滤</button>
+            </div>
             <input type="file" id="fileInput" style="display:none" @change="handleImport">
-
-            <!-- 新增的三个按钮 -->
-            <a class="control-btn" href="../反应/index2.html">反应</a>
-            <button class="control-btn" @click="clearSelection">清空</button>
-            <a class="control-btn" href="../超滤/index.html">超滤</a>
         </div>
 
         <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
@@ -545,7 +738,26 @@
                     selectItem(newItem);
                 };
 
-                const resetData = () => { if (confirm('清空数据？')) items.value = []; };
+                const resetData = () => { if (confirm('确认清空所有数据？')) items.value = []; };
+
+                const loadRemoteData = async (url, name) => {
+                    if (confirm(`确定覆盖导入 ${name} 数据吗？`)) {
+                        try {
+                            const res = await fetch(url);
+                            if (!res.ok) throw new Error('Network response was not ok');
+                            const data = await res.json();
+                            if (Array.isArray(data)) {
+                                items.value = data;
+                                if (allTags.value.length > 0) selectTag(allTags.value[0]);
+                                else currentItem.value = null;
+                            }
+                        } catch (e) { alert('加载失败: ' + e.message); }
+                    }
+                };
+
+                const loadFyData = () => loadRemoteData('../fy.json', '反应');
+                const loadQclData = () => loadRemoteData('../qcl.json', '超滤');
+
                 const triggerImport = () => document.getElementById('fileInput').click();
                 const handleImport = (e) => {
                     const file = e.target.files[0];
@@ -560,17 +772,11 @@
                     if (file) reader.readAsText(file);
                 };
 
-                // 新增：清空选择
-                const clearSelection = () => {
-                    currentTag.value = '';
-                    currentItem.value = null;
-                };
-
                 return {
                     items, allTags, currentTag, currentList, currentItem,
                     selectTag, selectItem,
                     showModal, form, openCreateModal, saveItem, resetData, triggerImport, handleImport,
-                    clearSelection
+                    loadFyData, loadQclData
                 };
             }
         }).mount('#app');
