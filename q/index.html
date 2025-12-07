@@ -45,13 +45,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /*border: 1px dashed #ccc;*/
-            /* debug */
         }
 
         .qr-card {
             border: 2px solid var(--color-active);
-            /* padding: 10px; */
             width: 380px;
             text-align: center;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -94,13 +91,11 @@
             width: 300px;
             overflow-y: auto;
             padding-right: 10px;
-            /*border-left: 1px solid #eee;*/
             padding-left: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
             justify-content: center;
-            /* 垂直居中展示 */
         }
 
         .list-item {
@@ -143,7 +138,7 @@
             display: block;
         }
 
-        /* 列表未选中状态(显示绿色空心) */
+        /* 列表未选中状态 */
         .list-item:not(.active) .radio-circle::after {
             content: '';
             width: 12px;
@@ -172,7 +167,6 @@
             align-items: center;
             cursor: pointer;
             min-width: 50px;
-            /* border: 1px solid red; debug */
         }
 
         .tag-icon-circle {
@@ -184,7 +178,6 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 15px;
-            /* 圆圈和文字的距离 */
         }
 
         .tag-item.active .tag-icon-circle {
@@ -200,25 +193,20 @@
             background: var(--color-active);
         }
 
-        /* 模仿图中未选中的同心圆效果（或者空心绿圆） */
         .tag-item:not(.active) .tag-icon-circle::after {
             content: '';
             width: 14px;
             height: 14px;
             border-radius: 50%;
             background: transparent;
-            /* 也是空心 */
             border: 1px solid var(--color-inactive);
-            /* 内圈 */
         }
-
 
         .tag-text {
             writing-mode: vertical-lr;
             /* 竖排文字 */
             font-size: 1rem;
             letter-spacing: 4px;
-            /* 增加字间距 */
             color: var(--color-text);
             height: 100px;
             /* 固定文字区域高度 */
@@ -240,7 +228,95 @@
             background: transparent;
         }
 
-        /* 功能按钮（新增/导入等）悬浮在角落，以免破坏画面 */
+        /* 手机端适配 Media Queries */
+        @media (max-width: 768px) {
+            .upper-section {
+                flex-direction: column;
+                /* 上下排列 */
+                padding: 10px;
+                gap: 5px;
+            }
+
+            .display-area {
+                flex: none;
+                /* 不再自动伸缩，由内容决定 */
+                height: auto;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .qr-card {
+                width: 100%;
+                /* 宽度占满 */
+                max-width: 320px;
+                /* 限制最大宽度 */
+                margin: 0 auto;
+                /* 居中 */
+            }
+
+            .qr-visualization {
+                padding: 10px;
+            }
+
+            .qr-info-bar {
+                padding: 10px 0;
+            }
+
+            .qr-title {
+                font-size: 1.4rem;
+            }
+
+            .qr-code-text {
+                font-size: 1rem;
+            }
+
+            .list-area {
+                width: 100%;
+                /* 列表全宽 */
+                padding-left: 0;
+                padding-right: 0;
+                border-left: none;
+                flex: 1;
+                /* 占据剩余高度 */
+                justify-content: flex-start;
+                /* 手机上从顶部开始排，避免太少时居中奇怪 */
+                overflow-y: auto;
+            }
+
+            .list-item {
+                font-size: 1rem;
+                padding: 8px 10px;
+                background: #f9f9f9;
+                /* 给列表项一点背景区分 */
+                border-radius: 6px;
+                margin-bottom: 0;
+                border: 1px solid transparent;
+            }
+
+            .list-item.active {
+                background: #eff6ff;
+                border-color: #bfdbfe;
+            }
+
+            .bottom-section {
+                height: 130px;
+                /* 稍微减小高度 */
+                padding: 5px 10px;
+            }
+
+            .tag-text {
+                font-size: 0.9rem;
+                height: 70px;
+                letter-spacing: 2px;
+            }
+
+            /* 手机上隐藏半透明控制按钮，或者显示得更明显一点 */
+            .floating-controls {
+                opacity: 0.6;
+            }
+        }
+
+        /* 功能按钮悬浮 */
         .floating-controls {
             position: fixed;
             top: 20px;
@@ -248,7 +324,6 @@
             display: flex;
             gap: 10px;
             opacity: 0.2;
-            /* 默认半透明，不干扰视线 */
             transition: opacity 0.3s;
         }
 
@@ -265,7 +340,7 @@
             font-size: 0.8rem;
         }
 
-        /* 模态框样式保留，用于数据录入 */
+        /* 模态框样式 */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -279,6 +354,7 @@
         .modal {
             background: white;
             width: 400px;
+            max-width: 90%;
             padding: 20px;
             border-radius: 8px;
             display: flex;
@@ -298,11 +374,9 @@
     <div id="app" style="height: 100%; display:flex; flex-direction:column;">
 
         <div class="upper-section">
-            <!-- 左/中 展示展示区 -->
             <div class="display-area" v-if="currentItem">
                 <div class="qr-card">
                     <div class="qr-visualization" ref="qrRef">
-                        <!-- 二维码占位 -->
                         <img :src="currentItem.qrImage" v-if="currentItem.qrImage">
                     </div>
                     <div class="qr-info-bar">
@@ -315,27 +389,19 @@
                 <div style="color:#999;">请选择分类和项目</div>
             </div>
 
-            <!-- 右侧列表区 -->
             <div class="list-area">
                 <div class="list-item" v-for="item in currentList" :key="item.id"
                     :class="{ active: currentItem && currentItem.id === item.id }" @click="selectItem(item)">
                     <div class="radio-circle"></div>
                     <span>{{ item.desc || item.content }}</span>
                 </div>
-                <div v-if="currentList.length === 0" style="color:#999; text-align:center;">
+                <div v-if="currentList.length === 0" style="color:#999; text-align:center; padding: 20px;">
                     (该分类下无项目)
                 </div>
             </div>
         </div>
 
-        <!-- 下方分类区 -->
         <div class="bottom-section">
-            <!-- 特殊分类：全部 -->
-            <!-- <div class="tag-item" :class="{ active: currentTag === 'all' }" @click="selectTag('all')">
-                <div class="tag-icon-circle"></div>
-                <div class="tag-text">全部</div>
-            </div> -->
-
             <div class="tag-item" v-for="tag in allTags" :key="tag" :class="{ active: currentTag === tag }"
                 @click="selectTag(tag)">
                 <div class="tag-icon-circle"></div>
@@ -343,7 +409,6 @@
             </div>
         </div>
 
-        <!-- 隐形功能区：保持数据管理能力 -->
         <div class="floating-controls">
             <button class="control-btn" @click="openCreateModal">+ 新增</button>
             <button class="control-btn" @click="resetData">重置</button>
@@ -351,7 +416,6 @@
             <input type="file" id="fileInput" style="display:none" @change="handleImport">
         </div>
 
-        <!-- 编辑/新建 模态框 -->
         <div class="modal-overlay" v-if="showModal" @click.self="showModal = false">
             <div class="modal">
                 <h3>新建二维码</h3>
@@ -377,8 +441,6 @@
                 const items = ref([]);
                 const currentTag = ref('');
                 const currentItem = ref(null);
-
-                // 数据加载
                 const STORAGE_KEY = 'qr_manager_data_q';
 
                 onMounted(() => {
@@ -386,43 +448,29 @@
                     if (saved) {
                         try { items.value = JSON.parse(saved); } catch (e) { }
                     }
-                    // 默认选中第一个标签
-                    if (allTags.value.length > 0) {
-                        selectTag(allTags.value[0]);
-                    }
+                    if (allTags.value.length > 0) selectTag(allTags.value[0]);
 
-                    // 处理 Hash Link
                     const hash = window.location.hash.slice(1);
                     if (hash) {
                         const target = items.value.find(i => i.content === decodeURIComponent(hash));
                         if (target) {
-                            // 找到该Item对应的Tag
-                            if (target.tags && target.tags.length > 0) {
-                                selectTag(target.tags[0]);
-                                selectItem(target);
-                            } else {
-                                // 无标签情况
-                                selectTag('all'); // 假设有all逻辑，或者处理无标签
-                                selectItem(target);
-                            }
+                            if (target.tags && target.tags.length > 0) selectTag(target.tags[0]);
+                            else selectTag('all');
+                            selectItem(target);
                         }
                     }
                 });
 
                 watch(items, (val) => {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(val));
-                    // 刷新标签列表后，如果当前 Tag 不存在了，重置
                     if (currentTag.value !== 'all' && !allTags.value.includes(currentTag.value) && allTags.value.length > 0) {
                         selectTag(allTags.value[0]);
                     }
                 }, { deep: true });
 
-                // 计算属性
                 const allTags = computed(() => {
                     const tags = new Set();
                     items.value.forEach(i => (i.tags || []).forEach(t => tags.add(t)));
-                    // 可以根据图示，这里可能需要手动排序或固定顺序
-                    // 按照图示，这里简单排序
                     return Array.from(tags).sort();
                 });
 
@@ -432,24 +480,17 @@
                     return items.value.filter(i => i.tags && i.tags.includes(currentTag.value));
                 });
 
-                // 动作
                 const selectTag = (tag) => {
                     currentTag.value = tag;
-                    // 切换标签时，默认选中第一个项目
-                    if (currentList.value.length > 0) {
-                        selectItem(currentList.value[0]);
-                    } else {
-                        currentItem.value = null;
-                    }
+                    if (currentList.value.length > 0) selectItem(currentList.value[0]);
+                    else currentItem.value = null;
                 };
 
                 const selectItem = (item) => {
                     currentItem.value = item;
-                    // 更新 Hash 方便分享
-                    // window.location.hash = item.content; // 可选，看用户是否需要
+                    // window.location.hash = item.content; 
                 };
 
-                // 管理功能
                 const showModal = ref(false);
                 const form = ref({ content: '', desc: '', tagsInput: '' });
                 const openCreateModal = () => {
@@ -484,16 +525,11 @@
                     };
                     items.value.push(newItem);
                     showModal.value = false;
-
-                    // 自动跳转到新项目
                     if (tags.length > 0) selectTag(tags[0]);
                     selectItem(newItem);
                 };
 
-                const resetData = () => {
-                    if (confirm('清空数据？')) items.value = [];
-                };
-
+                const resetData = () => { if (confirm('清空数据？')) items.value = []; };
                 const triggerImport = () => document.getElementById('fileInput').click();
                 const handleImport = (e) => {
                     const file = e.target.files[0];
