@@ -8,7 +8,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!%E5%8F%8D%E5%BA%94/index2\\.html|fy/index2\\.html|.*\\.).*)",
+      "source": "/((?!%E5%8F%8D%E5%BA%94/index2\\.html|fy\\.html|.*\\.).*)",
       "destination": "/nofound.html"
     }
   ]
