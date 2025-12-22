@@ -3,190 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCTG Pocket - 151 模拟器</title>
+    <title>PCTG Pocket - 官方高清版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        body { background-color: #060914; color: white; overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
+        body { background-color: #04060b; color: white; overflow-x: hidden; font-family: system-ui, -apple-system, sans-serif; }
 
-        .bg-gradient-mesh {
+        /* 背景流光效果 */
+        .bg-mesh {
             position: fixed; inset: 0;
-            background: radial-gradient(circle at 20% 30%, #1e3a8a 0%, #060914 50%),
-                        radial-gradient(circle at 80% 70%, #581c87 0%, #060914 50%);
-            z-index: -1; opacity: 0.5;
+            background: radial-gradient(circle at 10% 20%, #1e3a8a 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, #4c1d95 0%, transparent 40%);
+            z-index: -1;
         }
 
-        /* 3D 卡牌结构 */
-        .card-wrapper {
+        /* 3D 卡牌容器 - 响应式高度 */
+        .card-container {
             perspective: 1200px;
-            width: 220px; height: 308px; /* 调整为更接近实卡比例 */
+            aspect-ratio: 2.5 / 3.5;
+            width: 100%;
+            max-width: 240px; /* 限制最大宽度防止过大 */
+            margin: 0 auto;
         }
 
         .card-inner {
             position: relative;
             width: 100%; height: 100%;
-            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+            transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.2);
             transform-style: preserve-3d;
             cursor: pointer;
         }
 
-        .card-inner.is-flipped { transform: rotateY(180deg) scale(1.05); }
+        .card-inner.is-flipped { transform: rotateY(180deg); }
 
         .card-face {
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden;
-            border-radius: 12px;
+            border-radius: 4.5% / 3.2%; /* 模拟官方卡牌圆角 */
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             overflow: hidden;
         }
 
-        /* 背面：完整显示图2链接 */
+        /* 背面：你提供的图2链接 */
         .card-back {
             background-image: url('https://image.pokemon.com.cn/wp-content/uploads/2025/11/tcg-img-basic-3.png');
             background-size: 100% 100%;
             background-position: center;
         }
 
-        /* 正面 UI 仿制 */
+        /* 正面：由 API 提供高清大图 */
         .card-front {
             transform: rotateY(180deg);
-            background: #a5d8ff; /* 动态颜色会在代码中覆盖 */
-            border: 8px solid #c0c0c0; /* 银色外边框 */
-            display: flex; flex-direction: column;
-            color: #1a202c;
-            padding: 4px;
+            background-color: #eee;
         }
+        .card-front img { width: 100%; height: 100%; object-fit: fill; }
 
-        /* 顶部栏 */
-        .card-header { display: flex; align-items: flex-end; padding: 2px 4px; position: relative; }
-        .tag-basic { 
-            background: #eeeeee; border: 1px solid #999; 
-            font-size: 8px; padding: 0 4px; border-radius: 2px;
-            position: absolute; top: 2px; left: 4px;
+        /* 稀有卡特殊闪光层 */
+        .holo-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.3) 55%, transparent 100%);
+            background-size: 250% 250%;
+            animation: holo-move 5s infinite linear;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            z-index: 10;
         }
-        .pokemon-name { font-size: 16px; font-weight: 900; margin-left: 4px; margin-top: 8px; }
-        .hp-box { margin-left: auto; display: flex; align-items: baseline; gap: 2px; }
-        .hp-text { font-size: 14px; font-weight: 900; }
-        .type-icon { width: 14px; height: 14px; border-radius: 50%; background: #3b82f6; border: 1px solid rgba(0,0,0,0.2); }
-
-        /* 插画区 */
-        .illustration-box {
-            width: 100%; aspect-ratio: 1.4 / 1;
-            background: white; border: 2px solid #ddd;
-            margin-top: 2px; border-radius: 2px; overflow: hidden;
-        }
-
-        /* 技能区 */
-        .move-row { padding: 4px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .move-title { display: flex; align-items: center; gap: 4px; font-weight: 900; font-size: 12px; }
-        .move-desc { font-size: 8px; color: #444; margin-top: 1px; line-height: 1.1; }
-
-        /* 底部属性栏 */
-        .card-footer { 
-            margin-top: auto; font-size: 7px; border-top: 1px solid #999; 
-            padding: 2px 4px; display: flex; justify-content: space-between;
+        @keyframes holo-move {
+            0% { background-position: 200% 200%; }
+            100% { background-position: -200% -200%; }
         }
 
         .pack-vibrate { animation: vibrate 0.1s infinite; }
-        @keyframes vibrate { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+        @keyframes vibrate {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-1px, -2px); }
+            100% { transform: translate(1px, -1px); }
+        }
     </style>
 </head>
 <body>
 
-<div id="app" class="relative min-h-screen flex flex-col items-center justify-center p-2">
-    <div class="bg-gradient-mesh"></div>
+<div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-mesh"></div>
 
     <!-- 1. 选包界面 -->
-    <div v-if="view === 'SELECT'" class="text-center animate__animated animate__fadeIn">
-        <h1 class="text-3xl font-black italic mb-12 text-white tracking-widest">POKÉMON <span class="text-yellow-400">TCGP</span></h1>
-        <div class="flex flex-wrap justify-center gap-10">
-            <div v-for="p in packs" :key="p.id" @click="openAction(p)" class="group cursor-pointer">
-                <img :src="p.img" class="w-44 md:w-52 drop-shadow-2xl transition-transform group-hover:scale-110">
+    <div v-if="view === 'SELECT'" class="w-full max-w-4xl animate__animated animate__fadeIn">
+        <h1 class="text-3xl md:text-5xl font-black italic text-center mb-12 tracking-tighter">
+            POKÉMON <span class="text-yellow-400">POCKET</span>
+        </h1>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-12 px-8">
+            <div v-for="p in packs" :key="p.id" @click="openAction(p)" 
+                 class="cursor-pointer group flex flex-col items-center">
+                <img :src="p.img" class="w-48 md:w-64 drop-shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
             </div>
         </div>
     </div>
 
     <!-- 2. 开包过程 -->
-    <div v-if="view === 'OPENING'" class="flex flex-col items-center">
-        <div v-if="!isRipped" @click="ripAction" class="cursor-pointer text-center">
-            <img :src="activePack.img" class="w-64" :class="{'pack-vibrate': isVibrating}">
-            <div class="mt-8 bg-yellow-400 text-black px-10 py-2 rounded-full font-black animate-bounce shadow-xl">撕开获取 6 张卡牌</div>
+    <div v-if="view === 'OPENING'" class="w-full flex flex-col items-center">
+        <!-- 撕包环节 -->
+        <div v-if="!isRipped" @click="ripAction" class="cursor-pointer flex flex-col items-center">
+            <img :src="activePack.img" class="w-64 md:w-80" :class="{'pack-vibrate': isVibrating}">
+            <div class="mt-10 bg-yellow-400 text-black px-12 py-3 rounded-full font-black text-lg animate-bounce shadow-2xl">
+                撕开卡包
+            </div>
         </div>
 
-        <!-- 卡牌：上3下3布局 -->
-        <div v-if="isRipped" class="flex flex-col items-center animate__animated animate__fadeIn">
-            <div class="grid grid-cols-3 gap-6 md:gap-10">
-                <div v-for="(card, i) in currentCards" :key="i" class="card-wrapper">
+        <!-- 卡牌展示区：自适应 Grid -->
+        <div v-if="isRipped" class="w-full max-w-6xl animate__animated animate__fadeIn">
+            <!-- 核心：上3下3布局，响应式适配 -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-10">
+                <div v-for="(card, i) in currentCards" :key="i" class="card-container">
                     <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="card.revealed = true">
+                        <!-- 背面 (图2) -->
                         <div class="card-face card-back"></div>
-                        
-                        <!-- 仿米立龙 UI 的卡牌正面 -->
-                        <div class="card-face card-front" :style="{ background: card.bgColor }">
-                            <div class="tag-basic">基础</div>
-                            <div class="card-header">
-                                <div class="pokemon-name">{{ card.name }}</div>
-                                <div class="hp-box">
-                                    <span class="text-[8px] font-bold">HP</span>
-                                    <span class="hp-text">{{ card.hp }}</span>
-                                    <div class="type-icon" :style="{ background: card.typeColor }"></div>
-                                </div>
-                            </div>
-
-                            <div class="illustration-box">
-                                <img :src="card.img" class="w-full h-full object-contain bg-gradient-to-b from-white to-transparent">
-                            </div>
-
-                            <div class="text-[6px] text-gray-600 text-center py-0.5">全国图鉴No.{{card.id}}  身高：0.3m  体重：8.0kg</div>
-
-                            <div class="flex-1">
-                                <!-- 随机生成 1-2 个技能 -->
-                                <div class="move-row" v-for="move in card.moves">
-                                    <div class="move-title">
-                                        <div class="type-icon w-2.5 h-2.5" :style="{ background: card.typeColor }"></div>
-                                        <span>{{ move.name }}</span>
-                                        <span class="ml-auto" v-if="move.damage">{{ move.damage }}</span>
-                                    </div>
-                                    <div class="move-desc">选择自己牌库中最多2张「基本能量」，附着于自己的1只基础宝可梦身上。</div>
-                                </div>
-                            </div>
-
-                            <div class="card-footer">
-                                <span>弱点 {{card.weakness}} x2</span>
-                                <span>抗性 --</span>
-                                <span>撤退 ●</span>
-                            </div>
+                        <!-- 正面 (API 高清图) -->
+                        <div class="card-face card-front">
+                            <img :src="card.hiResImg" @error="handleImgError">
+                            <div v-if="card.isRare" class="holo-overlay"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="mt-10">
-                <button v-if="allRevealed" @click="view = 'SELECT'" class="bg-white text-blue-900 px-12 py-2 rounded-full font-black shadow-2xl hover:bg-yellow-400 transition-all">收下全部</button>
-                <p v-else class="text-yellow-400 font-bold tracking-widest animate-pulse mt-4">点击卡片翻转</p>
+            <!-- 完成 -->
+            <div class="mt-12 text-center">
+                <button v-if="allRevealed" @click="view = 'SELECT'" 
+                        class="bg-white text-blue-900 px-16 py-3 rounded-full font-black text-xl shadow-2xl hover:bg-yellow-400 transition-all">
+                    收下全部卡牌
+                </button>
+                <p v-else class="text-yellow-400 font-black tracking-widest animate-pulse">点击每一张卡牌来翻开它</p>
             </div>
         </div>
     </div>
 
-    <!-- 加载中 -->
-    <div v-if="loading" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-yellow-400 font-black italic">
-        <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-        GETTING DATA...
+    <!-- 全屏加载 -->
+    <div v-if="loading" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-6 font-black text-yellow-400 tracking-widest italic">正在从官网同步高清卡面...</p>
     </div>
 </div>
 
 <script>
     const { createApp, ref, computed } = Vue;
-
-    const TYPE_MAP = {
-        water: { bg: '#a5d8ff', icon: '#3b82f6', weak: '⚡' },
-        fire: { bg: '#ffc9c9', icon: '#ef4444', weak: '💧' },
-        grass: { bg: '#b2f2bb', icon: '#22c55e', weak: '🔥' },
-        electric: { bg: '#ffec99', icon: '#eab308', weak: '🪨' },
-        psychic: { bg: '#eebefa', icon: '#a855f7', weak: '🌙' },
-        fighting: { bg: '#ffd8a8', icon: '#f97316', weak: '🌀' },
-        normal: { bg: '#e9ecef', icon: '#94a3b8', weak: '👊' }
-    };
 
     createApp({
         setup() {
@@ -198,43 +158,34 @@
             const currentCards = ref([]);
 
             const packs = [
-                { id: 1, img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png', range: [1, 151] },
-                { id: 2, img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/2b62dd5a724064a784b7b76a67231c7a795febcd-scaled.png', range: [1, 151] },
-                { id: 3, img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/01/151_5_1_5-effect-picture-thumb-600xauto-26551.png', range: [1, 1025] }
+                { id: '151a', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png', set: 'sv3pt5' }, // 官方151集合
+                { id: '151b', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/2b62dd5a724064a784b7b76a67231c7a795febcd-scaled.png', set: 'sv3pt5' },
+                { id: 'gen', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/01/151_5_1_5-effect-picture-thumb-600xauto-26551.png', set: 'sv4' }   // 帕底亚进化
             ];
 
             const openAction = async (pack) => {
                 loading.value = true;
                 activePack.value = pack;
                 try {
-                    const results = [];
-                    for(let i=0; i<6; i++) {
-                        const randomId = Math.floor(Math.random() * (pack.range[1] - pack.range[0] + 1)) + pack.range[0];
-                        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
-                        const data = await res.json();
-                        const type = data.types[0].type.name;
-                        const config = TYPE_MAP[type] || TYPE_MAP.normal;
+                    // 使用 pokemontcg.io 的 API 获取对应系列的卡牌
+                    // 随机获取 6 张卡
+                    const response = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${pack.set}&pageSize=50`);
+                    const data = await response.json();
+                    
+                    // 随机打乱并取6张
+                    const shuffled = data.data.sort(() => 0.5 - Math.random());
+                    const selected = shuffled.slice(0, 6);
 
-                        results.push({
-                            id: data.id,
-                            name: data.name.charAt(0).toUpperCase() + data.name.slice(1),
-                            hp: data.stats[0].base_stat * 1,
-                            img: data.sprites.other['official-artwork'].front_default,
-                            bgColor: config.bg,
-                            typeColor: config.icon,
-                            weakness: config.weak,
-                            moves: data.moves.slice(0, 2).map(m => ({
-                                name: m.move.name.replace('-', ' '),
-                                damage: Math.random() > 0.5 ? (Math.floor(Math.random() * 3) + 1) * 10 : null
-                            })),
-                            revealed: false
-                        });
-                    }
-                    currentCards.value = results;
+                    currentCards.value = selected.map(c => ({
+                        hiResImg: c.images.large, // 获取官方高清大图
+                        isRare: c.rarity && c.rarity.includes('Rare'),
+                        revealed: false
+                    }));
+
                     view.value = 'OPENING';
                     isRipped.value = false;
                 } catch (e) {
-                    alert("API获取失败");
+                    alert("API 链接不稳定，请重试");
                 } finally {
                     loading.value = false;
                 }
@@ -245,12 +196,18 @@
                 setTimeout(() => {
                     isVibrating.value = false;
                     isRipped.value = true;
-                }, 600);
+                }, 700);
             };
 
-            const allRevealed = computed(() => drawResults => currentCards.value.length > 0 && currentCards.value.every(c => c.revealed));
+            const allRevealed = computed(() => {
+                return currentCards.value.length > 0 && currentCards.value.every(c => c.revealed);
+            });
 
-            return { view, packs, activePack, currentCards, openAction, ripAction, isVibrating, isRipped, loading, allRevealed };
+            const handleImgError = (e) => {
+                e.target.src = "https://images.pokemontcg.io/sv3pt5/1_hires.png"; // 备用图
+            };
+
+            return { view, packs, activePack, currentCards, openAction, ripAction, isVibrating, isRipped, loading, allRevealed, handleImgError };
         }
     }).mount('#app');
 </script>
