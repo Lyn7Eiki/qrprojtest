@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>抽你卡</title>
     
-    <!-- ✅ 新增：宝可梦中国官网图标 -->
+    <!-- 宝可梦官网图标 -->
     <link rel="icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
 
@@ -24,12 +24,12 @@
             z-index: -1; opacity: 0.8;
         }
 
-        /* 卡牌容器 - 稍微缩小一点以适应多张卡的情况 */
+        /* 卡牌容器 */
         .card-container {
             perspective: 1200px;
             aspect-ratio: 2.5 / 3.5;
-            width: 160px; /* 基础宽度 */
-            flex-shrink: 0; /* 防止被挤压 */
+            width: 160px;
+            flex-shrink: 0;
         }
 
         .card-inner {
@@ -59,7 +59,7 @@
         .card-front img { width: 100%; height: 100%; object-fit: fill; opacity: 0; transition: opacity 0.3s; }
         .card-front img.loaded { opacity: 1; }
 
-        /* 自定义滑动条样式 */
+        /* 滑动条样式 */
         input[type=range] {
             -webkit-appearance: none; width: 100%; background: transparent;
         }
@@ -94,7 +94,7 @@
         <h1 class="text-4xl md:text-5xl font-black italic text-center mb-4 tracking-tighter text-white drop-shadow-lg">
             选择你的 <span class="text-yellow-400">扩展包</span>
         </h1>
-        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">抽你卡 -- make with ❤️</p>
+        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">抽你卡</p>
         
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
@@ -112,16 +112,32 @@
             <img :src="activePack.img" class="w-56 md:w-64 transition-transform hover:scale-105 cursor-pointer" 
                  :class="{'pack-vibrate': isVibrating}" @click="ripAction">
             
-            <!-- 数量选择控制器 -->
-            <div class="mt-8 bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl">
+            <!-- 设置面板 -->
+            <div class="mt-6 bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl">
+                
+                <!-- 数量选择 -->
                 <div class="flex justify-between items-end mb-4">
-                    <span class="text-xs font-bold text-slate-400 uppercase">选择抽卡数量</span>
+                    <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
                     <span class="text-3xl font-black text-yellow-400">{{ drawCount }} <span class="text-sm text-white">张</span></span>
                 </div>
-                
-                <!-- 滑动条 -->
                 <input type="range" v-model.number="drawCount" min="1" max="20" step="1" class="mb-6">
                 
+                <!-- 必出皮卡丘开关 -->
+                <div class="flex items-center justify-between mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">⚡</span>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-white">必出皮卡丘</span>
+                            <span class="text-[10px] text-slate-400">其中一张必定是皮卡超</span>
+                        </div>
+                    </div>
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
+                    </label>
+                </div>
+
                 <!-- 快捷按钮 -->
                 <div class="flex justify-between gap-2">
                     <button @click="drawCount=1" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">单抽</button>
@@ -135,15 +151,16 @@
             </div>
         </div>
 
-        <!-- 3. 卡牌展示区 (自适应布局) -->
+        <!-- 3. 卡牌展示区 -->
         <div v-if="isRipped" class="w-full px-4 animate__animated animate__fadeInUp">
-            <!-- 顶部工具栏 -->
             <div class="flex justify-between items-center max-w-6xl mx-auto mb-6">
                 <h2 class="text-xl font-bold text-slate-300">获得 {{ currentCards.length }} 张卡牌</h2>
-                <button v-if="!allRevealed" @click="revealAll" class="text-xs bg-slate-800 px-4 py-2 rounded-full hover:bg-slate-700">全部翻开</button>
+                <div class="flex gap-4">
+                    <button v-if="!allRevealed" @click="revealAll" class="text-xs bg-slate-800 px-4 py-2 rounded-full hover:bg-slate-700 font-bold border border-slate-600">全部翻开</button>
+                </div>
             </div>
 
-            <!-- 核心布局：Flex Wrap 实现自动居中换行 -->
+            <!-- 弹性布局 -->
             <div class="flex flex-wrap justify-center gap-4 max-w-[1400px] mx-auto pb-20">
                 <div v-for="(card, i) in currentCards" :key="i" class="card-container">
                     <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="card.revealed = true">
@@ -157,7 +174,6 @@
                 </div>
             </div>
 
-            <!-- 底部固定按钮 -->
             <div class="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
                 <button v-if="allRevealed" @click="view = 'SELECT'" 
                         class="bg-yellow-400 text-black px-12 py-3 rounded-full font-black text-lg shadow-[0_10px_30px_rgba(250,204,21,0.5)] hover:scale-105 transition-all pointer-events-auto cursor-pointer">
@@ -178,7 +194,10 @@
             const isRipped = ref(false);
             const activePack = ref(null);
             const currentCards = ref([]);
-            const drawCount = ref(10); // 默认抽5张
+            
+            // 新增状态
+            const drawCount = ref(10); // 默认 10 张
+            const guaranteePikachu = ref(false); // 默认关闭
 
             const packs = [
                 { id: '151-1', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png' },
@@ -186,27 +205,37 @@
                 { id: 'gem', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/01/151_5_1_5-effect-picture-thumb-600xauto-26551.png' }
             ];
 
-            // 1. 选中卡包，进入准备页面
             const selectPack = (pack) => {
                 activePack.value = pack;
                 view.value = 'OPENING';
                 isRipped.value = false;
-                drawCount.value = 5; // 重置为默认
+                drawCount.value = 10; // 重置为默认 10
+                guaranteePikachu.value = false; // 重置开关
                 currentCards.value = [];
             };
 
-            // 2. 撕开卡包动作
             const ripAction = () => {
                 if (isVibrating.value) return;
                 
                 isVibrating.value = true;
                 
-                // 立即生成数据（此时还在震动）
                 const cards = [];
+                // 如果开启了必出皮卡丘，随机选一个位置放皮卡丘
+                let pikachuIndex = -1;
+                if (guaranteePikachu.value) {
+                    pikachuIndex = Math.floor(Math.random() * drawCount.value);
+                }
+
                 for(let i=0; i<drawCount.value; i++) {
-                    const id = Math.floor(Math.random() * 151) + 1;
+                    let id;
+                    // 判断是否命中保底位
+                    if (i === pikachuIndex) {
+                        id = 25; // 皮卡丘 ID
+                    } else {
+                        id = Math.floor(Math.random() * 151) + 1;
+                    }
+
                     const padId = String(id).padStart(3, '0');
-                    // 使用最稳的周生生源
                     const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}.png`;
 
                     cards.push({
@@ -214,15 +243,13 @@
                         url: url,
                         revealed: false,
                         isLoaded: false,
-                        isHolo: Math.random() > 0.8 // 20%闪卡
+                        isHolo: id === 25 ? true : Math.random() > 0.8 // 皮卡丘必定闪卡，其他随机
                     });
                 }
                 currentCards.value = cards;
 
-                // 预加载图片
                 cards.forEach(c => { const img = new Image(); img.src = c.url; });
 
-                // 震动结束后切换界面
                 setTimeout(() => {
                     isVibrating.value = false;
                     isRipped.value = true;
@@ -242,7 +269,7 @@
             });
 
             return { 
-                view, packs, activePack, currentCards, drawCount, 
+                view, packs, activePack, currentCards, drawCount, guaranteePikachu,
                 selectPack, ripAction, revealAll, handleError, 
                 isVibrating, isRipped, allRevealed 
             };
