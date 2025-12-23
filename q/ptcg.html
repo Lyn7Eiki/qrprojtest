@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抽你卡</title>
+    <title>抽你卡 - 自定义概率版</title>
     
-    <!-- 宝可梦官网图标 -->
     <link rel="icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
 
@@ -59,6 +58,15 @@
         .card-front img { width: 100%; height: 100%; object-fit: fill; opacity: 0; transition: opacity 0.3s; }
         .card-front img.loaded { opacity: 1; }
 
+        /* 稀有度标签 */
+        .rarity-badge {
+            position: absolute; bottom: 5px; right: 5px;
+            font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .bg-ar { background: linear-gradient(45deg, #ec4899, #8b5cf6); color: white; }
+        .bg-sar { background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706); color: black; border: 1px solid white; }
+
         /* 滑动条样式 */
         input[type=range] {
             -webkit-appearance: none; width: 100%; background: transparent;
@@ -70,6 +78,12 @@
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px;
+        }
+
+        /* 数字输入框去箭头 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
         }
 
         .pack-vibrate { animation: vibrate 0.1s infinite; }
@@ -94,7 +108,7 @@
         <h1 class="text-4xl md:text-5xl font-black italic text-center mb-4 tracking-tighter text-white drop-shadow-lg">
             选择你的 <span class="text-yellow-400">扩展包</span>
         </h1>
-        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">抽你卡</p>
+        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">自定义概率版</p>
         
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
@@ -116,12 +130,24 @@
             <div class="mt-6 bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl">
                 
                 <!-- 数量选择 -->
-                <div class="flex justify-between items-end mb-4">
+                <div class="flex justify-between items-end mb-2">
                     <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
-                    <span class="text-3xl font-black text-yellow-400">{{ drawCount }} <span class="text-sm text-white">张</span></span>
+                    <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
                 </div>
                 <input type="range" v-model.number="drawCount" min="1" max="20" step="1" class="mb-6">
                 
+                <!-- 新增：概率自定义区 -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-slate-800 p-2 rounded-lg border border-pink-900/50">
+                        <label class="block text-[10px] text-pink-400 font-bold uppercase mb-1">AR 概率 (%)</label>
+                        <input type="number" v-model.number="probAR" min="0" max="100" class="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-center font-mono focus:outline-none focus:border-pink-500">
+                    </div>
+                    <div class="bg-slate-800 p-2 rounded-lg border border-yellow-900/50">
+                        <label class="block text-[10px] text-yellow-400 font-bold uppercase mb-1">SAR 概率 (%)</label>
+                        <input type="number" v-model.number="probSAR" min="0" max="100" class="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-center font-mono focus:outline-none focus:border-yellow-500">
+                    </div>
+                </div>
+
                 <!-- 必出皮卡丘开关 -->
                 <div class="flex items-center justify-between mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
                     <div class="flex items-center gap-2">
@@ -131,7 +157,6 @@
                             <span class="text-[10px] text-slate-400">其中一张必定是皮卡超</span>
                         </div>
                     </div>
-                    <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
@@ -167,8 +192,14 @@
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
+                            
+                            <!-- 异画标记 -->
+                            <div v-if="card.suffix === 'a'" class="rarity-badge bg-ar">AR</div>
+                            <div v-if="card.suffix === 'b'" class="rarity-badge bg-sar">SAR</div>
+
                             <img :src="card.url" :class="{ 'loaded': card.isLoaded }" @load="card.isLoaded = true" @error="handleError(card)">
-                            <div v-if="card.isHolo" class="holo-effect"></div>
+                            <!-- 异画卡必有闪光 -->
+                            <div v-if="card.isHolo || card.suffix" class="holo-effect"></div>
                         </div>
                     </div>
                 </div>
@@ -195,9 +226,12 @@
             const activePack = ref(null);
             const currentCards = ref([]);
             
-            // 新增状态
-            const drawCount = ref(10); // 默认 10 张
-            const guaranteePikachu = ref(false); // 默认关闭
+            const drawCount = ref(10); 
+            const guaranteePikachu = ref(false); 
+            
+            // 新增：概率状态
+            const probAR = ref(10); // 默认 10%
+            const probSAR = ref(2); // 默认 2%
 
             const packs = [
                 { id: '151-1', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png' },
@@ -209,41 +243,64 @@
                 activePack.value = pack;
                 view.value = 'OPENING';
                 isRipped.value = false;
-                drawCount.value = 10; // 重置为默认 10
-                guaranteePikachu.value = false; // 重置开关
+                drawCount.value = 10;
+                guaranteePikachu.value = false;
                 currentCards.value = [];
             };
 
             const ripAction = () => {
                 if (isVibrating.value) return;
-                
                 isVibrating.value = true;
                 
                 const cards = [];
-                // 如果开启了必出皮卡丘，随机选一个位置放皮卡丘
                 let pikachuIndex = -1;
                 if (guaranteePikachu.value) {
                     pikachuIndex = Math.floor(Math.random() * drawCount.value);
                 }
 
+                // 将输入的 0-100 转换为 0-1 的比率
+                const rateSAR = probSAR.value / 100;
+                const rateAR = probAR.value / 100;
+
                 for(let i=0; i<drawCount.value; i++) {
                     let id;
-                    // 判断是否命中保底位
                     if (i === pikachuIndex) {
-                        id = 25; // 皮卡丘 ID
+                        id = 25; 
                     } else {
                         id = Math.floor(Math.random() * 151) + 1;
                     }
 
                     const padId = String(id).padStart(3, '0');
-                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}.png`;
+                    
+                    // --- 动态概率逻辑 ---
+                    const rand = Math.random();
+                    let suffix = '';
+                    let isHolo = false;
+
+                    // 优先级：SAR > AR > 普通
+                    if (rand < rateSAR) { 
+                        // 中了 SAR
+                        suffix = 'b'; 
+                        isHolo = true;
+                    } else if (rand < (rateSAR + rateAR)) {
+                        // 没中 SAR 但中了 AR
+                        suffix = 'a'; 
+                        isHolo = true;
+                    } else {
+                        // 普通卡
+                        suffix = '';
+                        isHolo = id === 25 ? true : Math.random() > 0.8; 
+                    }
+
+                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
 
                     cards.push({
                         id: padId,
+                        suffix: suffix, 
                         url: url,
                         revealed: false,
                         isLoaded: false,
-                        isHolo: id === 25 ? true : Math.random() > 0.8 // 皮卡丘必定闪卡，其他随机
+                        isHolo: isHolo
                     });
                 }
                 currentCards.value = cards;
@@ -261,7 +318,19 @@
             };
 
             const handleError = (card) => {
-                card.url = 'https://static.campaignchowsangsang.com/pokemon/151/big/151_001.png';
+                const baseUrl = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${card.id}`;
+                
+                if (card.suffix === 'b') {
+                    // SAR 挂了，退到 AR
+                    card.suffix = 'a';
+                    card.url = `${baseUrl}a.png`;
+                } else if (card.suffix === 'a') {
+                    // AR 挂了，退到普通
+                    card.suffix = '';
+                    card.url = `${baseUrl}.png`;
+                } else {
+                    card.url = 'https://static.campaignchowsangsang.com/pokemon/151/big/151_001.png';
+                }
             };
 
             const allRevealed = computed(() => {
@@ -270,6 +339,7 @@
 
             return { 
                 view, packs, activePack, currentCards, drawCount, guaranteePikachu,
+                probAR, probSAR, // 暴露新变量
                 selectPack, ripAction, revealAll, handleError, 
                 isVibrating, isRipped, allRevealed 
             };
