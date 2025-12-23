@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PCTG Pocket - 自选抽卡版</title>
+    <title>抽你卡</title>
+    
+    <!-- ✅ 新增：宝可梦中国官网图标 -->
+    <link rel="icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -87,9 +92,9 @@
     <!-- 1. 选包界面 -->
     <div v-if="view === 'SELECT'" class="w-full max-w-5xl animate__animated animate__fadeIn">
         <h1 class="text-4xl md:text-5xl font-black italic text-center mb-4 tracking-tighter text-white drop-shadow-lg">
-            POKÉMON <span class="text-yellow-400">POCKET</span>
+            选择你的 <span class="text-yellow-400">扩展包</span>
         </h1>
-        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">选择你的扩展包</p>
+        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">make with ❤️</p>
         
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
