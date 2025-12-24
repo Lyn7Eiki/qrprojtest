@@ -154,7 +154,7 @@
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
                  class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
-                <!-- 核心修改：使用本地图片路径 -->
+                <!-- 本地图片路径 -->
                 <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
@@ -180,7 +180,7 @@
                     <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
                     <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
                 </div>
-                <input type="range" v-model.number="drawCount" min="1" max="20" step="1" class="mb-6">
+                <input type="range" v-model.number="drawCount" min="1" max="30" step="1" class="mb-6">
                 
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div class="bg-slate-800 p-2 rounded-lg border border-pink-900/50">
@@ -210,6 +210,7 @@
                     </div>
                 </div>
 
+                <!-- 核心修改：改回单抽、5连、10连 -->
                 <div class="flex justify-between gap-2 mb-4">
                     <button @click="drawCount=1" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">单抽</button>
                     <button @click="drawCount=5" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">5连</button>
@@ -240,7 +241,6 @@
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
                             
-                            <!-- 标签 -->
                             <div v-if="card.suffix === 'a'" class="rarity-badge bg-ar">AR</div>
                             <div v-else-if="card.suffix === 'b'" class="rarity-badge bg-sar">SAR</div>
                             <div v-else-if="card.isHolo" class="rarity-badge bg-holo">闪</div>
@@ -277,12 +277,12 @@
             const currentCards = ref([]);
             const zoomedCard = ref(null);
             
-            const drawCount = ref(10); 
+            // 默认值保持为 9
+            const drawCount = ref(9); 
             const guaranteePikachu = ref(false); 
             const probAR = ref(10); 
             const probSAR = ref(2);
 
-            // 核心修改：使用本地文件路径
             const packs = [
                 { id: '151-1', img: './base1.webp' },
                 { id: '151-2', img: './base2.webp' },
@@ -307,6 +307,8 @@
                 showFlash.value = false;
                 currentCards.value = [];
                 zoomedCard.value = null;
+                // 重置为 9
+                drawCount.value = 9;
             };
 
             const ripAction = () => {
@@ -333,7 +335,7 @@
                     else if (rand < (rateSAR + rateAR)) { suffix = 'a'; isHolo = true; } 
                     else { suffix = ''; isHolo = id === 25 ? true : Math.random() > 0.8; }
 
-                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
+                    const url = `https://special.pokemon.cn/151/img/big/151_${padId}${suffix}.png`;
                     cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo });
                 }
                 currentCards.value = cards;
@@ -363,7 +365,7 @@
             const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
 
             const handleError = (card) => {
-                const baseUrl = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${card.id}`;
+                const baseUrl = `https://special.pokemon.cn/151/img/big/151_${card.id}`;
                 if (card.suffix === 'b') { card.suffix = 'a'; card.url = `${baseUrl}a.png`; } 
                 else if (card.suffix === 'a') { card.suffix = ''; card.url = `${baseUrl}.png`; } 
                 else { card.url = 'https://special.pokemon.cn/151/img/big/151_001.png'; }
