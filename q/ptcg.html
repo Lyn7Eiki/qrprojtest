@@ -36,7 +36,7 @@
             transform-style: preserve-3d; cursor: pointer;
         }
 
-        .is-flipped { transform: rotateY(180deg); } /* 去掉了 scale，防止翻转时穿模 */
+        .is-flipped { transform: rotateY(180deg); }
 
         .card-face {
             position: absolute; width: 100%; height: 100%;
@@ -60,11 +60,15 @@
         /* --- 稀有度与闪卡标签 --- */
         .rarity-badge {
             position: absolute; 
-            bottom: 6px; right: 6px;
-            font-size: 10px; font-weight: 900; 
-            padding: 1px 6px; border-radius: 4px;
+            bottom: 6px; 
+            right: 6px;
+            font-size: 10px; 
+            font-weight: 900; 
+            padding: 1px 6px;
+            border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.6); 
-            z-index: 20; letter-spacing: 0.5px;
+            z-index: 20;
+            letter-spacing: 0.5px;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             pointer-events: none;
         }
@@ -108,7 +112,7 @@
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
 
-        /* === 核心新增：全屏查看器动画 === */
+        /* === 全屏查看器动画 === */
         .zoom-enter-active, .zoom-leave-active { transition: opacity 0.3s ease; }
         .zoom-enter-from, .zoom-leave-to { opacity: 0; }
         
@@ -122,7 +126,7 @@
     <div class="bg-mesh"></div>
     <div v-if="showFlash" class="flash-overlay"></div>
 
-    <!-- ==================== 全屏查看器 (新增) ==================== -->
+    <!-- ==================== 全屏查看器 ==================== -->
     <transition name="zoom">
         <div v-if="zoomedCard" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" @click="zoomedCard = null">
             <transition name="zoom-card" appear>
@@ -130,13 +134,7 @@
                 <div class="relative w-full max-w-sm aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl cursor-zoom-out border border-white/20" @click.stop="zoomedCard = null">
                     <!-- 图片 -->
                     <img :src="zoomedCard.url" class="w-full h-full object-fill">
-                    
-                    <!-- 标签 (放大时也显示) -->
-                    <div v-if="zoomedCard.suffix === 'a'" class="rarity-badge bg-ar !text-sm !px-3 !py-1 !bottom-4 !right-4">AR</div>
-                    <div v-else-if="zoomedCard.suffix === 'b'" class="rarity-badge bg-sar !text-sm !px-3 !py-1 !bottom-4 !right-4">SAR</div>
-                    <div v-else-if="zoomedCard.isHolo" class="rarity-badge bg-holo !text-sm !px-3 !py-1 !bottom-4 !right-4">闪</div>
-
-                    <!-- 闪光特效 (放大时更明显) -->
+                    <!-- 闪光特效 (放大时保留) -->
                     <div v-if="zoomedCard.isHolo || zoomedCard.suffix" class="holo-effect !opacity-40"></div>
                 </div>
             </transition>
@@ -156,6 +154,7 @@
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
                  class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
+                <!-- 核心修改：使用本地图片路径 -->
                 <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
@@ -194,19 +193,21 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700 overflow-visible">
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700 overflow-visible relative">
+                    <div class="flex items-center gap-4 relative z-10 w-full">
                         <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/25.svg" 
                              class="w-14 h-14 object-contain drop-shadow-md">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold text-white">必出皮卡丘</span>
                             <span class="text-[10px] text-slate-400 mt-0.5">其中一张必定是皮卡超</span>
                         </div>
+                        <div class="ml-auto">
+                            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400 shadow-inner"></div>
+                            </label>
+                        </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                        <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400 shadow-inner"></div>
-                    </label>
                 </div>
 
                 <div class="flex justify-between gap-2 mb-4">
@@ -234,12 +235,12 @@
 
             <div class="grid gap-3 md:gap-4 max-w-7xl mx-auto pb-24 justify-items-center transition-all duration-500" :class="layoutClass">
                 <div v-for="(card, i) in currentCards" :key="i" class="card-container">
-                    <!-- 核心修改：@click 逻辑 -->
                     <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="handleCardClick(card)">
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
                             
+                            <!-- 标签 -->
                             <div v-if="card.suffix === 'a'" class="rarity-badge bg-ar">AR</div>
                             <div v-else-if="card.suffix === 'b'" class="rarity-badge bg-sar">SAR</div>
                             <div v-else-if="card.isHolo" class="rarity-badge bg-holo">闪</div>
@@ -274,8 +275,6 @@
             const showFlash = ref(false); 
             const activePack = ref(null);
             const currentCards = ref([]);
-            
-            // 新增：放大的卡片数据
             const zoomedCard = ref(null);
             
             const drawCount = ref(10); 
@@ -283,10 +282,11 @@
             const probAR = ref(10); 
             const probSAR = ref(2);
 
+            // 核心修改：使用本地文件路径
             const packs = [
-                { id: '151-1', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png' },
-                { id: '151-2', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/2b62dd5a724064a784b7b76a67231c7a795febcd-scaled.png' },
-                { id: 'gem', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/01/151_5_1_5-effect-picture-thumb-600xauto-26551.png' }
+                { id: '151-1', img: './base1.webp' },
+                { id: '151-2', img: './base2.webp' },
+                { id: 'gem', img: './base3.webp' }
             ];
 
             const layoutClass = computed(() => {
@@ -333,7 +333,7 @@
                     else if (rand < (rateSAR + rateAR)) { suffix = 'a'; isHolo = true; } 
                     else { suffix = ''; isHolo = id === 25 ? true : Math.random() > 0.8; }
 
-                    const url = `https://special.pokemon.cn/151/img/big/151_${padId}${suffix}.png`;
+                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
                     cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo });
                 }
                 currentCards.value = cards;
@@ -352,13 +352,10 @@
                 }, 600);
             };
 
-            // 核心修改：点击逻辑
             const handleCardClick = (card) => {
                 if (!card.revealed) {
-                    // 如果没翻开，翻开它
                     card.revealed = true;
                 } else {
-                    // 如果已经翻开，放大显示
                     zoomedCard.value = card;
                 }
             };
@@ -366,7 +363,7 @@
             const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
 
             const handleError = (card) => {
-                const baseUrl = `https://special.pokemon.cn/151/img/big/151_${card.id}`;
+                const baseUrl = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${card.id}`;
                 if (card.suffix === 'b') { card.suffix = 'a'; card.url = `${baseUrl}a.png`; } 
                 else if (card.suffix === 'a') { card.suffix = ''; card.url = `${baseUrl}.png`; } 
                 else { card.url = 'https://special.pokemon.cn/151/img/big/151_001.png'; }
