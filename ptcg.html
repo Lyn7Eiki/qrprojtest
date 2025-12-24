@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>抽你卡</title>
     
-    <!-- ✅ 新增：宝可梦中国官网图标 -->
     <link rel="icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
 
@@ -16,7 +15,6 @@
     <style>
         body { background-color: #04060b; color: white; overflow-x: hidden; font-family: system-ui, -apple-system, sans-serif; }
 
-        /* 背景特效 */
         .bg-mesh {
             position: fixed; inset: 0;
             background: radial-gradient(circle at 10% 20%, #172554 0%, transparent 60%),
@@ -24,12 +22,12 @@
             z-index: -1; opacity: 0.8;
         }
 
-        /* 卡牌容器 - 稍微缩小一点以适应多张卡的情况 */
+        /* --- 卡牌样式 --- */
         .card-container {
             perspective: 1200px;
             aspect-ratio: 2.5 / 3.5;
-            width: 160px; /* 基础宽度 */
-            flex-shrink: 0; /* 防止被挤压 */
+            width: 160px;
+            flex-shrink: 0;
         }
 
         .card-inner {
@@ -59,192 +57,476 @@
         .card-front img { width: 100%; height: 100%; object-fit: fill; opacity: 0; transition: opacity 0.3s; }
         .card-front img.loaded { opacity: 1; }
 
-        /* 自定义滑动条样式 */
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent;
+        /* --- 稀有度与闪卡标签 --- */
+        .rarity-badge {
+            position: absolute; 
+            bottom: 6px; 
+            right: 6px;
+            font-size: 10px; 
+            font-weight: 900; 
+            padding: 1px 6px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.6); 
+            z-index: 20;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            pointer-events: none;
         }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 20px; width: 20px;
-            border-radius: 50%; background: #facc15; cursor: pointer; margin-top: -8px;
-            box-shadow: 0 0 10px rgba(250, 204, 21, 0.8);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px;
-        }
-
-        .pack-vibrate { animation: vibrate 0.1s infinite; }
-        @keyframes vibrate { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
         
+        .bg-ar { background: linear-gradient(135deg, #d946ef, #8b5cf6); color: white; border: 1px solid rgba(255,255,255,0.4); }
+        .bg-sar { background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
+        .bg-holo { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid rgba(255,255,255,0.3); font-family: "Microsoft YaHei", sans-serif; }
+
+        /* --- 闪卡流光特效 (自动播放) --- */
         .holo-effect {
-            position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s;
-            background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 60%, transparent 80%);
-            background-size: 200% 200%; mix-blend-mode: overlay;
+            position: absolute; inset: 0; pointer-events: none;
+            opacity: 0.6; 
+            background: linear-gradient(115deg, 
+                transparent 30%, 
+                rgba(255,255,255,0.2) 45%, 
+                rgba(255,255,255,0.6) 50%, 
+                rgba(255,255,255,0.2) 55%, 
+                transparent 70%);
+            background-size: 250% 250%;
+            mix-blend-mode: overlay; 
+            animation: holoMove 3s infinite linear;
         }
-        .card-inner:hover .holo-effect { opacity: 1; animation: holoMove 2.5s infinite linear; }
         @keyframes holoMove { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* 撕包动画 */
+        .pack-shake { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
+        .pack-tear-top { clip-path: polygon(0 0, 100% 0, 100% 22%, 0 22%); animation: tearTop 0.6s forwards cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes tearTop { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(-120px) rotate(-15deg); opacity: 0; } }
+        .pack-tear-bottom { clip-path: polygon(0 22%, 100% 22%, 100% 100%, 0 100%); animation: tearBottom 0.6s forwards cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes tearBottom { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(100px) scale(0.9); opacity: 0; } }
+        .flash-overlay { position: fixed; inset: 0; background: white; z-index: 50; pointer-events: none; animation: flash 0.8s forwards; }
+        @keyframes flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* 滑动条兼容 */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #facc15; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px rgba(250, 204, 21, 0.8); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
+        input[type=range]::-moz-range-thumb { height: 20px; width: 20px; border: none; border-radius: 50%; background: #facc15; cursor: pointer; }
+        input[type=range]::-moz-range-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* === 全屏查看器动画 === */
+        .zoom-enter-active, .zoom-leave-active { transition: opacity 0.3s ease; }
+        .zoom-enter-from, .zoom-leave-to { opacity: 0; }
+        .zoom-card-enter-active, .zoom-card-leave-active { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .zoom-card-enter-from, .zoom-card-leave-to { transform: scale(0.5); opacity: 0; }
+        
+        /* 隐藏滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* NEW 标签动画 */
+        .bg-new { 
+            background: linear-gradient(135deg, #f43f5e, #e11d48); 
+            color: white; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 0 8px rgba(244, 63, 94, 0.6);
+            animation: pulse-new 2s infinite;
+        }
+        @keyframes pulse-new { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        
+        /* 标签基础 */
+        .badge-base {
+            position: absolute; font-size: 10px; font-weight: 900; padding: 1px 6px;
+            border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 20;
+            letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); pointer-events: none;
+        }
+        .pos-br { bottom: 6px; right: 6px; }
+        .pos-tl { top: 6px; left: 6px; }
     </style>
 </head>
 <body>
 
 <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
     <div class="bg-mesh"></div>
+    <div v-if="showFlash" class="flash-overlay"></div>
+
+    <!-- ==================== 全屏查看器 ==================== -->
+    <transition name="zoom">
+        <div v-if="zoomedCard" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" @click="zoomedCard = null">
+            <transition name="zoom-card" appear>
+                <div class="relative w-full max-w-sm aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl cursor-zoom-out border border-white/20" @click.stop="zoomedCard = null">
+                    <img :src="zoomedCard.url" class="w-full h-full object-fill">
+                    <div v-if="zoomedCard.isHolo || zoomedCard.suffix" class="holo-effect !opacity-40"></div>
+                </div>
+            </transition>
+            <div class="absolute bottom-10 text-white/50 text-sm pointer-events-none">点击任意处关闭</div>
+        </div>
+    </transition>
 
     <!-- 1. 选包界面 -->
     <div v-if="view === 'SELECT'" class="w-full max-w-5xl animate__animated animate__fadeIn">
         <h1 class="text-4xl md:text-5xl font-black italic text-center mb-4 tracking-tighter text-white drop-shadow-lg">
             选择你的 <span class="text-yellow-400">扩展包</span>
         </h1>
-        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm">make with ❤️</p>
+        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm invisible select-none">抽你卡</p>
         
-        <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
+        <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4 mb-10">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
                  class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
                 <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
         </div>
+
+        <div class="text-center">
+            <button @click="openGallery" class="bg-slate-800 border border-slate-600 px-8 py-3 rounded-full font-bold hover:bg-slate-700 transition shadow-lg flex items-center gap-2 mx-auto">
+                <span>📖</span> 查看图鉴 
+                <!-- 核心修改：只显示收集数 -->
+                <span class="text-yellow-400 text-sm ml-1">{{ collectedCount }}</span>
+            </button>
+        </div>
     </div>
 
     <!-- 2. 开包设置界面 -->
     <div v-if="view === 'OPENING'" class="w-full flex flex-col items-center">
-        <!-- 待撕开的卡包 -->
-        <div v-if="!isRipped" class="flex flex-col items-center w-full max-w-md animate__animated animate__zoomIn">
-            <img :src="activePack.img" class="w-56 md:w-64 transition-transform hover:scale-105 cursor-pointer" 
-                 :class="{'pack-vibrate': isVibrating}" @click="ripAction">
-            
-            <!-- 数量选择控制器 -->
-            <div class="mt-8 bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl">
-                <div class="flex justify-between items-end mb-4">
-                    <span class="text-xs font-bold text-slate-400 uppercase">选择抽卡数量</span>
-                    <span class="text-3xl font-black text-yellow-400">{{ drawCount }} <span class="text-sm text-white">张</span></span>
+        
+        <div v-if="!isRipped" class="relative flex flex-col items-center w-full max-w-md animate__animated animate__zoomIn">
+            <div class="relative w-56 md:w-64 aspect-[2/3.5] cursor-pointer" @click="ripAction">
+                <img v-if="!isTearing" :src="activePack.img" class="w-full h-full object-contain absolute inset-0 z-10 transition-transform hover:scale-105" :class="{'pack-shake': isVibrating}">
+                <div v-else class="w-full h-full absolute inset-0 z-20">
+                    <img :src="activePack.img" class="w-full h-full object-contain absolute inset-0 pack-tear-top">
+                    <img :src="activePack.img" class="w-full h-full object-contain absolute inset-0 pack-tear-bottom">
                 </div>
+            </div>
+            
+            <div v-if="!isTearing" class="mt-6 bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl transition-opacity duration-300" :class="{'opacity-0': isVibrating}">
                 
-                <!-- 滑动条 -->
-                <input type="range" v-model.number="drawCount" min="1" max="20" step="1" class="mb-6">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
+                    <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
+                </div>
+                <input type="range" v-model.number="drawCount" min="1" max="30" step="1" class="mb-6">
                 
-                <!-- 快捷按钮 -->
-                <div class="flex justify-between gap-2">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-slate-800 p-2 rounded-lg border border-pink-900/50">
+                        <label class="block text-[10px] text-pink-400 font-bold uppercase mb-1">AR 概率 (%)</label>
+                        <input type="number" v-model.number="probAR" min="0" max="100" class="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-center font-mono outline-none">
+                    </div>
+                    <div class="bg-slate-800 p-2 rounded-lg border border-yellow-900/50">
+                        <label class="block text-[10px] text-yellow-400 font-bold uppercase mb-1">SAR 概率 (%)</label>
+                        <input type="number" v-model.number="probSAR" min="0" max="100" class="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-white text-center font-mono outline-none">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700 overflow-visible relative">
+                    <div class="flex items-center gap-4 relative z-10 w-full">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/25.svg" 
+                             class="w-14 h-14 object-contain drop-shadow-md">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-white">必出皮卡丘</span>
+                            <span class="text-[10px] text-slate-400 mt-0.5">其中一张必定是皮卡超</span>
+                        </div>
+                        <div class="ml-auto">
+                            <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400 shadow-inner"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between gap-2 mb-4">
                     <button @click="drawCount=1" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">单抽</button>
                     <button @click="drawCount=5" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">5连</button>
                     <button @click="drawCount=10" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">10连</button>
                 </div>
 
-                <button @click="ripAction" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-lg transition shadow-lg active:scale-95">
-                    立即撕开
-                </button>
+                <div class="flex gap-3">
+                    <button @click="view = 'SELECT'" class="w-1/3 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition active:scale-95">返回</button>
+                    <button @click="ripAction" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-lg transition shadow-lg active:scale-95">立即撕开</button>
+                </div>
             </div>
         </div>
 
-        <!-- 3. 卡牌展示区 (自适应布局) -->
-        <div v-if="isRipped" class="w-full px-4 animate__animated animate__fadeInUp">
-            <!-- 顶部工具栏 -->
-            <div class="flex justify-between items-center max-w-6xl mx-auto mb-6">
+        <!-- 3. 卡牌展示区 -->
+        <div v-if="isRipped" class="w-full px-2 animate__animated animate__fadeInUp">
+            <div class="flex flex-col md:flex-row justify-between items-center max-w-6xl mx-auto mb-6 gap-4">
                 <h2 class="text-xl font-bold text-slate-300">获得 {{ currentCards.length }} 张卡牌</h2>
-                <button v-if="!allRevealed" @click="revealAll" class="text-xs bg-slate-800 px-4 py-2 rounded-full hover:bg-slate-700">全部翻开</button>
+                <div class="flex gap-4">
+                    <button v-if="!allRevealed" @click="revealAll" class="text-xs bg-slate-800 px-4 py-2 rounded-full hover:bg-slate-700 font-bold border border-slate-600">全部翻开</button>
+                    <button @click="selectPack(activePack)" class="text-xs bg-blue-600 px-4 py-2 rounded-full hover:bg-blue-500 font-bold">返回</button>
+                </div>
             </div>
 
-            <!-- 核心布局：Flex Wrap 实现自动居中换行 -->
-            <div class="flex flex-wrap justify-center gap-4 max-w-[1400px] mx-auto pb-20">
+            <div class="grid gap-3 md:gap-4 max-w-7xl mx-auto pb-24 justify-items-center transition-all duration-500" :class="layoutClass">
                 <div v-for="(card, i) in currentCards" :key="i" class="card-container">
-                    <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="card.revealed = true">
+                    <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="handleCardClick(card)">
                         <div class="card-face card-back"></div>
-                        <div class="card-face card-front">
+                        <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
+                            
+                            <div v-if="card.suffix === 'a'" class="badge-base bg-ar pos-br">AR</div>
+                            <div v-else-if="card.suffix === 'b'" class="badge-base bg-sar pos-br">SAR</div>
+                            <div v-else-if="card.isHolo" class="badge-base bg-holo pos-br">闪</div>
+                            
+                            <!-- NEW 标签 (左上角) -->
+                            <div v-if="card.isNew" class="badge-base bg-new pos-tl">NEW</div>
+
                             <img :src="card.url" :class="{ 'loaded': card.isLoaded }" @load="card.isLoaded = true" @error="handleError(card)">
-                            <div v-if="card.isHolo" class="holo-effect"></div>
+                            
+                            <div v-if="card.isHolo || card.suffix" class="holo-effect"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 底部固定按钮 -->
             <div class="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
                 <button v-if="allRevealed" @click="view = 'SELECT'" 
-                        class="bg-yellow-400 text-black px-12 py-3 rounded-full font-black text-lg shadow-[0_10px_30px_rgba(250,204,21,0.5)] hover:scale-105 transition-all pointer-events-auto cursor-pointer">
-                    收下卡牌 & 继续
+                        class="bg-yellow-400 text-black px-8 py-2 rounded-full font-bold text-base shadow-[0_10px_30px_rgba(250,204,21,0.5)] hover:scale-105 transition-all pointer-events-auto cursor-pointer border-2 border-yellow-500">
+                    继续
                 </button>
             </div>
         </div>
     </div>
+
+    <!-- ================== 4. 图鉴界面 ================== -->
+    <div v-if="view === 'GALLERY'" class="fixed inset-0 z-50 bg-[#0f172a] flex flex-col">
+        <div class="bg-[#0f172a]/95 backdrop-blur px-4 py-3 border-b border-slate-800 shadow-xl flex items-center gap-4 flex-shrink-0">
+            <button @click="view = 'SELECT'" class="bg-slate-800 px-4 py-2 rounded-lg text-sm font-bold text-white hover:bg-slate-700 transition">
+                ← 返回
+            </button>
+            <div class="flex-1 text-center">
+                <h2 class="text-base font-bold text-white">全图鉴收藏</h2>
+                <!-- 核心修改：只显示收集数，去掉总数 -->
+                <p class="text-[10px] text-gray-400 font-mono mt-0.5">
+                    已收集: <span class="text-yellow-400 font-bold text-lg">{{ collectedCount }}</span>
+                </p>
+            </div>
+            <button @click="resetData" class="text-xs text-red-500 hover:text-red-400 underline">重置</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll p-4">
+            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 md:gap-4 max-w-[1600px] mx-auto">
+                <div v-for="card in galleryDisplayList" :key="card.uniqueId" class="relative aspect-[2.5/3.5]">
+                    
+                    <div v-if="collectedSet.has(card.uniqueId)" 
+                         @click="zoomedCard = card"
+                         class="w-full h-full rounded-lg overflow-hidden border border-slate-700 relative group transition hover:scale-105 hover:z-10 hover:border-yellow-400 cursor-zoom-in shadow-lg">
+                        
+                        <img loading="lazy" :src="card.url" class="w-full h-full object-fill">
+                        <div v-if="card.suffix" class="holo-effect"></div>
+                        <div class="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] md:text-[10px] text-center text-gray-300 font-mono py-0.5 backdrop-blur-sm">
+                            #{{ card.id }}<span v-if="card.suffix" class="uppercase text-yellow-400 font-bold ml-0.5">{{ card.suffix }}</span>
+                        </div>
+                    </div>
+
+                    <div v-else class="card-locked group cursor-not-allowed opacity-60 hover:opacity-80 transition">
+                        <!-- 去掉问号 -->
+                        <div class="absolute bottom-2 text-[10px] text-gray-600 font-mono opacity-0 group-hover:opacity-100 transition">#{{ card.id }}</div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="h-10"></div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    const { createApp, ref, computed } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     createApp({
         setup() {
             const view = ref('SELECT');
             const isVibrating = ref(false);
+            const isTearing = ref(false); 
             const isRipped = ref(false);
+            const showFlash = ref(false); 
             const activePack = ref(null);
             const currentCards = ref([]);
-            const drawCount = ref(5); // 默认抽5张
+            const zoomedCard = ref(null);
+            
+            const drawCount = ref(9); 
+            const guaranteePikachu = ref(false); 
+            const probAR = ref(10); 
+            const probSAR = ref(2);
 
             const packs = [
-                { id: '151-1', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/accb6c04e358f172fffdc6ea0a0e77c40d1f64b0-scaled.png' },
-                { id: '151-2', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/09/2b62dd5a724064a784b7b76a67231c7a795febcd-scaled.png' },
-                { id: 'gem', img: 'https://image.pokemon.com.cn/wp-content/uploads/2025/01/151_5_1_5-effect-picture-thumb-600xauto-26551.png' }
+                { id: '151-1', img: './base1.webp' },
+                { id: '151-2', img: './base2.webp' },
+                { id: 'gem', img: './base3.webp' }
             ];
 
-            // 1. 选中卡包，进入准备页面
+            const collectedSet = ref(new Set());
+            // 基础卡列表
+            const baseList = [];
+            for (let i = 1; i <= 151; i++) {
+                const padId = String(i).padStart(3, '0');
+                const baseUrl = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}`;
+                baseList.push({ uniqueId: padId, id: padId, suffix: '', url: `${baseUrl}.png` });
+            }
+
+            // 动态图鉴列表
+            const galleryDisplayList = computed(() => {
+                let display = [];
+                baseList.forEach(baseCard => {
+                    display.push(baseCard);
+                    const idA = baseCard.id + 'a';
+                    if (collectedSet.value.has(idA)) {
+                        display.push({ 
+                            uniqueId: idA, id: baseCard.id, suffix: 'a', 
+                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}a.png` 
+                        });
+                    }
+                    const idB = baseCard.id + 'b';
+                    if (collectedSet.value.has(idB)) {
+                        display.push({ 
+                            uniqueId: idB, id: baseCard.id, suffix: 'b', 
+                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}b.png` 
+                        });
+                    }
+                });
+                return display;
+            });
+
+            const collectedCount = computed(() => collectedSet.value.size);
+
+            const loadSave = () => {
+                const saved = localStorage.getItem('ptcg_collection');
+                if (saved) collectedSet.value = new Set(JSON.parse(saved));
+            };
+            const saveProgress = () => {
+                localStorage.setItem('ptcg_collection', JSON.stringify([...collectedSet.value]));
+            };
+
+            const layoutClass = computed(() => {
+                const count = currentCards.value.length;
+                if (count === 10) return 'grid-cols-2 md:grid-cols-5';
+                if (count === 9) return 'grid-cols-3 md:grid-cols-3';
+                if (count === 5) return 'grid-cols-3 md:grid-cols-5';
+                if (count <= 4) return 'grid-cols-2 md:grid-cols-4';
+                return 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+            });
+
             const selectPack = (pack) => {
                 activePack.value = pack;
                 view.value = 'OPENING';
                 isRipped.value = false;
-                drawCount.value = 5; // 重置为默认
+                isTearing.value = false;
+                isVibrating.value = false;
+                showFlash.value = false;
                 currentCards.value = [];
+                zoomedCard.value = null;
+                drawCount.value = 9;
             };
 
-            // 2. 撕开卡包动作
             const ripAction = () => {
-                if (isVibrating.value) return;
-                
+                if (isVibrating.value || isTearing.value) return;
                 isVibrating.value = true;
                 
-                // 立即生成数据（此时还在震动）
                 const cards = [];
-                for(let i=0; i<drawCount.value; i++) {
-                    const id = Math.floor(Math.random() * 151) + 1;
-                    const padId = String(id).padStart(3, '0');
-                    // 使用最稳的周生生源
-                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}.png`;
+                let pikachuIndex = -1;
+                if (guaranteePikachu.value) pikachuIndex = Math.floor(Math.random() * drawCount.value);
+                const rateSAR = probSAR.value / 100;
+                const rateAR = probAR.value / 100;
 
-                    cards.push({
-                        id: padId,
-                        url: url,
-                        revealed: false,
-                        isLoaded: false,
-                        isHolo: Math.random() > 0.8 // 20%闪卡
-                    });
+                for(let i=0; i<drawCount.value; i++) {
+                    let id;
+                    if (i === pikachuIndex) id = 25; 
+                    else id = Math.floor(Math.random() * 151) + 1;
+
+                    const padId = String(id).padStart(3, '0');
+                    const rand = Math.random();
+                    let suffix = '';
+                    let isHolo = false;
+
+                    if (rand < rateSAR) { suffix = 'b'; isHolo = true; } 
+                    else if (rand < (rateSAR + rateAR)) { suffix = 'a'; isHolo = true; } 
+                    else { suffix = ''; isHolo = id === 25 ? true : Math.random() > 0.8; }
+
+                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
+                    const uniqueId = padId + suffix;
+                    
+                    let isNew = false;
+                    if (!collectedSet.value.has(uniqueId)) {
+                        collectedSet.value.add(uniqueId);
+                        isNew = true;
+                    }
+
+                    cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo, isNew, uniqueId });
                 }
+                
+                saveProgress();
                 currentCards.value = cards;
 
-                // 预加载图片
-                cards.forEach(c => { const img = new Image(); img.src = c.url; });
+                cards.forEach(c => { 
+                    const img = new Image(); 
+                    img.src = c.url; 
+                    img.onerror = () => {
+                        if(c.isNew) {
+                            collectedSet.value.delete(c.uniqueId);
+                            c.isNew = false;
+                        }
+                        c.url = c.url.replace(/[ab]\.png/, '.png');
+                        c.suffix = '';
+                        c.isHolo = false;
+                        
+                        c.uniqueId = c.id;
+                        if (!collectedSet.value.has(c.uniqueId)) {
+                            collectedSet.value.add(c.uniqueId);
+                            c.isNew = true;
+                        }
+                        saveProgress();
+                    };
+                });
 
-                // 震动结束后切换界面
                 setTimeout(() => {
                     isVibrating.value = false;
-                    isRipped.value = true;
+                    isTearing.value = true; 
+                    setTimeout(() => {
+                        showFlash.value = true;
+                        setTimeout(() => {
+                            isRipped.value = true;
+                            showFlash.value = false;
+                        }, 400);
+                    }, 400);
                 }, 600);
             };
 
-            const revealAll = () => {
-                currentCards.value.forEach(c => c.revealed = true);
+            const handleCardClick = (card) => {
+                if (!card.revealed) card.revealed = true;
+                else zoomedCard.value = card;
             };
 
+            const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
+
             const handleError = (card) => {
-                card.url = 'https://static.campaignchowsangsang.com/pokemon/151/big/151_001.png';
+                const baseUrl = `https://special.pokemon.cn/151/img/big/151_${card.id}`;
+                if (card.suffix === 'b') { card.suffix = 'a'; card.url = `${baseUrl}a.png`; } 
+                else if (card.suffix === 'a') { card.suffix = ''; card.url = `${baseUrl}.png`; } 
+                else { card.url = 'https://special.pokemon.cn/151/img/big/151_001.png'; }
+            };
+
+            const openGallery = () => { view.value = 'GALLERY'; };
+            const resetData = () => {
+                if(confirm('确定要清空所有收集进度吗？')) {
+                    collectedSet.value.clear();
+                    saveProgress();
+                }
             };
 
             const allRevealed = computed(() => {
                 return currentCards.value.length > 0 && currentCards.value.every(c => c.revealed);
             });
 
+            onMounted(() => {
+                loadSave();
+            });
+
             return { 
-                view, packs, activePack, currentCards, drawCount, 
-                selectPack, ripAction, revealAll, handleError, 
-                isVibrating, isRipped, allRevealed 
+                view, packs, activePack, currentCards, drawCount, guaranteePikachu,
+                probAR, probSAR, isTearing, showFlash, layoutClass, zoomedCard,
+                selectPack, ripAction, revealAll, handleError, handleCardClick,
+                isVibrating, isRipped, allRevealed,
+                galleryDisplayList, collectedSet, collectedCount, openGallery, resetData
             };
         }
     }).mount('#app');
