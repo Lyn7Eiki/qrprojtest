@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="referrer" content="no-referrer">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>抽你卡</title>
     
     <link rel="icon" href="https://www.pokemon.cn/favicon.ico" type="image/x-icon">
@@ -26,8 +26,9 @@
         .card-container {
             perspective: 1200px;
             aspect-ratio: 2.5 / 3.5;
-            width: 160px;
-            flex-shrink: 0;
+            width: 100%;
+            max-width: 160px;
+            margin: 0 auto;
         }
 
         .card-inner {
@@ -49,6 +50,13 @@
             background-size: 100% 100%; background-position: center; border: 1px solid #1e3a8a;
         }
 
+        .card-locked {
+            position: relative; width: 100%; height: 100%; border-radius: 6px; overflow: hidden;
+            background: url('https://image.pokemon.com.cn/wp-content/uploads/2025/11/tcg-img-basic-3.png') center/100% 100%;
+            filter: grayscale(100%) brightness(0.3);
+            border: 1px dashed #334155;
+        }
+
         .card-front {
             transform: rotateY(180deg); background-color: #1a1c2c;
             display: flex; align-items: center; justify-content: center;
@@ -57,43 +65,26 @@
         .card-front img { width: 100%; height: 100%; object-fit: fill; opacity: 0; transition: opacity 0.3s; }
         .card-front img.loaded { opacity: 1; }
 
-        /* --- 稀有度与闪卡标签 --- */
-        .rarity-badge {
-            position: absolute; 
-            bottom: 6px; 
-            right: 6px;
-            font-size: 10px; 
-            font-weight: 900; 
-            padding: 1px 6px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.6); 
-            z-index: 20;
-            letter-spacing: 0.5px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            pointer-events: none;
+        .badge-base {
+            position: absolute; font-size: 10px; font-weight: 900; padding: 1px 6px;
+            border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 20;
+            letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); pointer-events: none;
         }
-        
+        .pos-br { bottom: 6px; right: 6px; }
+        .pos-tl { top: 6px; left: 6px; }
         .bg-ar { background: linear-gradient(135deg, #d946ef, #8b5cf6); color: white; border: 1px solid rgba(255,255,255,0.4); }
         .bg-sar { background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
-        .bg-holo { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid rgba(255,255,255,0.3); font-family: "Microsoft YaHei", sans-serif; }
+        .bg-holo { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .bg-new { background: linear-gradient(135deg, #f43f5e, #e11d48); color: white; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 0 8px rgba(244, 63, 94, 0.6); animation: pulse-new 2s infinite; }
+        @keyframes pulse-new { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 
-        /* --- 闪卡流光特效 (自动播放) --- */
         .holo-effect {
-            position: absolute; inset: 0; pointer-events: none;
-            opacity: 0.6; 
-            background: linear-gradient(115deg, 
-                transparent 30%, 
-                rgba(255,255,255,0.2) 45%, 
-                rgba(255,255,255,0.6) 50%, 
-                rgba(255,255,255,0.2) 55%, 
-                transparent 70%);
-            background-size: 250% 250%;
-            mix-blend-mode: overlay; 
-            animation: holoMove 3s infinite linear;
+            position: absolute; inset: 0; pointer-events: none; opacity: 0.6; 
+            background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.2) 55%, transparent 70%);
+            background-size: 250% 250%; mix-blend-mode: overlay; animation: holoMove 3s infinite linear;
         }
         @keyframes holoMove { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* 撕包动画 */
         .pack-shake { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
         .pack-tear-top { clip-path: polygon(0 0, 100% 0, 100% 22%, 0 22%); animation: tearTop 0.6s forwards cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -103,7 +94,6 @@
         .flash-overlay { position: fixed; inset: 0; background: white; z-index: 50; pointer-events: none; animation: flash 0.8s forwards; }
         @keyframes flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* 滑动条兼容 */
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #facc15; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px rgba(250, 204, 21, 0.8); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
@@ -112,33 +102,14 @@
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
 
-        /* === 全屏查看器动画 === */
         .zoom-enter-active, .zoom-leave-active { transition: opacity 0.3s ease; }
         .zoom-enter-from, .zoom-leave-to { opacity: 0; }
         .zoom-card-enter-active, .zoom-card-leave-active { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .zoom-card-enter-from, .zoom-card-leave-to { transform: scale(0.5); opacity: 0; }
         
-        /* 隐藏滚动条 */
         .custom-scroll::-webkit-scrollbar { width: 8px; }
         .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        
-        /* NEW 标签动画 */
-        .bg-new { 
-            background: linear-gradient(135deg, #f43f5e, #e11d48); 
-            color: white; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 0 8px rgba(244, 63, 94, 0.6);
-            animation: pulse-new 2s infinite;
-        }
-        @keyframes pulse-new { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-        
-        /* 标签基础 */
-        .badge-base {
-            position: absolute; font-size: 10px; font-weight: 900; padding: 1px 6px;
-            border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 20;
-            letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); pointer-events: none;
-        }
-        .pos-br { bottom: 6px; right: 6px; }
-        .pos-tl { top: 6px; left: 6px; }
     </style>
 </head>
 <body>
@@ -167,18 +138,18 @@
         </h1>
         <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm invisible select-none">抽你卡</p>
         
-        <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4 mb-10">
+        <!-- 核心修改：卡包一行三个，缩小间距 -->
+        <div class="grid grid-cols-3 gap-2 md:gap-8 px-2 max-w-4xl mx-auto justify-items-center items-center">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
-                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
-                <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
+                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95 w-full">
+                <img :src="p.img" class="w-full drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
         </div>
 
-        <div class="text-center">
+        <div class="text-center mt-10">
             <button @click="openGallery" class="bg-slate-800 border border-slate-600 px-8 py-3 rounded-full font-bold hover:bg-slate-700 transition shadow-lg flex items-center gap-2 mx-auto">
                 <span>📖</span> 查看图鉴 
-                <!-- 核心修改：只显示收集数 -->
                 <span class="text-yellow-400 text-sm ml-1">{{ collectedCount }}</span>
             </button>
         </div>
@@ -186,7 +157,6 @@
 
     <!-- 2. 开包设置界面 -->
     <div v-if="view === 'OPENING'" class="w-full flex flex-col items-center">
-        
         <div v-if="!isRipped" class="relative flex flex-col items-center w-full max-w-md animate__animated animate__zoomIn">
             <div class="relative w-56 md:w-64 aspect-[2/3.5] cursor-pointer" @click="ripAction">
                 <img v-if="!isTearing" :src="activePack.img" class="w-full h-full object-contain absolute inset-0 z-10 transition-transform hover:scale-105" :class="{'pack-shake': isVibrating}">
@@ -197,7 +167,6 @@
             </div>
             
             <div v-if="!isTearing" class="mt-6 bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-700 w-full shadow-2xl transition-opacity duration-300" :class="{'opacity-0': isVibrating}">
-                
                 <div class="flex justify-between items-end mb-2">
                     <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
                     <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
@@ -261,16 +230,11 @@
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
-                            
                             <div v-if="card.suffix === 'a'" class="badge-base bg-ar pos-br">AR</div>
                             <div v-else-if="card.suffix === 'b'" class="badge-base bg-sar pos-br">SAR</div>
                             <div v-else-if="card.isHolo" class="badge-base bg-holo pos-br">闪</div>
-                            
-                            <!-- NEW 标签 (左上角) -->
                             <div v-if="card.isNew" class="badge-base bg-new pos-tl">NEW</div>
-
                             <img :src="card.url" :class="{ 'loaded': card.isLoaded }" @load="card.isLoaded = true" @error="handleError(card)">
-                            
                             <div v-if="card.isHolo || card.suffix" class="holo-effect"></div>
                         </div>
                     </div>
@@ -293,10 +257,9 @@
                 ← 返回
             </button>
             <div class="flex-1 text-center">
-                <h2 class="text-base font-bold text-white">全图鉴收藏</h2>
-                <!-- 核心修改：只显示收集数，去掉总数 -->
+                <h2 class="text-base font-bold text-white">全图鉴收集</h2>
                 <p class="text-[10px] text-gray-400 font-mono mt-0.5">
-                    已收集: <span class="text-yellow-400 font-bold text-lg">{{ collectedCount }}</span>
+                    已获得: <span class="text-yellow-400 font-bold text-lg">{{ collectedCount }}</span>
                 </p>
             </div>
             <button @click="resetData" class="text-xs text-red-500 hover:text-red-400 underline">重置</button>
@@ -305,23 +268,18 @@
         <div class="flex-1 overflow-y-auto custom-scroll p-4">
             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 md:gap-4 max-w-[1600px] mx-auto">
                 <div v-for="card in galleryDisplayList" :key="card.uniqueId" class="relative aspect-[2.5/3.5]">
-                    
                     <div v-if="collectedSet.has(card.uniqueId)" 
                          @click="zoomedCard = card"
                          class="w-full h-full rounded-lg overflow-hidden border border-slate-700 relative group transition hover:scale-105 hover:z-10 hover:border-yellow-400 cursor-zoom-in shadow-lg">
-                        
                         <img loading="lazy" :src="card.url" class="w-full h-full object-fill">
                         <div v-if="card.suffix" class="holo-effect"></div>
                         <div class="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] md:text-[10px] text-center text-gray-300 font-mono py-0.5 backdrop-blur-sm">
                             #{{ card.id }}<span v-if="card.suffix" class="uppercase text-yellow-400 font-bold ml-0.5">{{ card.suffix }}</span>
                         </div>
                     </div>
-
-                    <div v-else class="card-locked group cursor-not-allowed opacity-60 hover:opacity-80 transition">
-                        <!-- 去掉问号 -->
+                    <div v-else class="card-locked group cursor-not-allowed transition">
                         <div class="absolute bottom-2 text-[10px] text-gray-600 font-mono opacity-0 group-hover:opacity-100 transition">#{{ card.id }}</div>
                     </div>
-
                 </div>
             </div>
             <div class="h-10"></div>
@@ -356,7 +314,6 @@
             ];
 
             const collectedSet = ref(new Set());
-            // 基础卡列表
             const baseList = [];
             for (let i = 1; i <= 151; i++) {
                 const padId = String(i).padStart(3, '0');
@@ -364,24 +321,17 @@
                 baseList.push({ uniqueId: padId, id: padId, suffix: '', url: `${baseUrl}.png` });
             }
 
-            // 动态图鉴列表
             const galleryDisplayList = computed(() => {
                 let display = [];
                 baseList.forEach(baseCard => {
                     display.push(baseCard);
                     const idA = baseCard.id + 'a';
                     if (collectedSet.value.has(idA)) {
-                        display.push({ 
-                            uniqueId: idA, id: baseCard.id, suffix: 'a', 
-                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}a.png` 
-                        });
+                        display.push({ uniqueId: idA, id: baseCard.id, suffix: 'a', url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}a.png` });
                     }
                     const idB = baseCard.id + 'b';
                     if (collectedSet.value.has(idB)) {
-                        display.push({ 
-                            uniqueId: idB, id: baseCard.id, suffix: 'b', 
-                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}b.png` 
-                        });
+                        display.push({ uniqueId: idB, id: baseCard.id, suffix: 'b', url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}b.png` });
                     }
                 });
                 return display;
@@ -429,10 +379,7 @@
                 const rateAR = probAR.value / 100;
 
                 for(let i=0; i<drawCount.value; i++) {
-                    let id;
-                    if (i === pikachuIndex) id = 25; 
-                    else id = Math.floor(Math.random() * 151) + 1;
-
+                    let id = (i === pikachuIndex) ? 25 : Math.floor(Math.random() * 151) + 1;
                     const padId = String(id).padStart(3, '0');
                     const rand = Math.random();
                     let suffix = '';
@@ -445,36 +392,23 @@
                     const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
                     const uniqueId = padId + suffix;
                     
-                    let isNew = false;
-                    if (!collectedSet.value.has(uniqueId)) {
-                        collectedSet.value.add(uniqueId);
-                        isNew = true;
-                    }
+                    // 标记这张卡在这个会话开始时是否已经在图鉴中
+                    const alreadyHad = collectedSet.value.has(uniqueId);
 
-                    cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo, isNew, uniqueId });
+                    cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo, isNew: false, uniqueId, alreadyHad });
                 }
                 
-                saveProgress();
                 currentCards.value = cards;
 
                 cards.forEach(c => { 
                     const img = new Image(); 
                     img.src = c.url; 
                     img.onerror = () => {
-                        if(c.isNew) {
-                            collectedSet.value.delete(c.uniqueId);
-                            c.isNew = false;
-                        }
                         c.url = c.url.replace(/[ab]\.png/, '.png');
                         c.suffix = '';
                         c.isHolo = false;
-                        
                         c.uniqueId = c.id;
-                        if (!collectedSet.value.has(c.uniqueId)) {
-                            collectedSet.value.add(c.uniqueId);
-                            c.isNew = true;
-                        }
-                        saveProgress();
+                        c.alreadyHad = collectedSet.value.has(c.uniqueId);
                     };
                 });
 
@@ -492,11 +426,35 @@
             };
 
             const handleCardClick = (card) => {
-                if (!card.revealed) card.revealed = true;
-                else zoomedCard.value = card;
+                if (!card.revealed) {
+                    card.revealed = true;
+                    // 核心修改：只有点开卡牌时，才检查是否为新卡并加入图鉴
+                    if (!card.alreadyHad) {
+                        if (!collectedSet.value.has(card.uniqueId)) {
+                            collectedSet.value.add(card.uniqueId);
+                            card.isNew = true; // 触发翻开时的 NEW 标签
+                            saveProgress();
+                        }
+                    }
+                } else {
+                    zoomedCard.value = card;
+                }
             };
 
-            const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
+            const revealAll = () => { 
+                currentCards.value.forEach(c => {
+                    if (!c.revealed) {
+                        c.revealed = true;
+                        if (!c.alreadyHad) {
+                            if (!collectedSet.value.has(c.uniqueId)) {
+                                collectedSet.value.add(c.uniqueId);
+                                c.isNew = true;
+                            }
+                        }
+                    }
+                });
+                saveProgress();
+            };
 
             const handleError = (card) => {
                 const baseUrl = `https://special.pokemon.cn/151/img/big/151_${card.id}`;
