@@ -36,7 +36,7 @@
             transform-style: preserve-3d; cursor: pointer;
         }
 
-        .is-flipped { transform: rotateY(180deg) scale(1.05); }
+        .is-flipped { transform: rotateY(180deg); } /* 去掉了 scale，防止翻转时穿模 */
 
         .card-face {
             position: absolute; width: 100%; height: 100%;
@@ -60,15 +60,11 @@
         /* --- 稀有度与闪卡标签 --- */
         .rarity-badge {
             position: absolute; 
-            bottom: 6px; 
-            right: 6px;
-            font-size: 10px; 
-            font-weight: 900; 
-            padding: 1px 6px;
-            border-radius: 4px;
+            bottom: 6px; right: 6px;
+            font-size: 10px; font-weight: 900; 
+            padding: 1px 6px; border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.6); 
-            z-index: 20;
-            letter-spacing: 0.5px;
+            z-index: 20; letter-spacing: 0.5px;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
             pointer-events: none;
         }
@@ -77,7 +73,7 @@
         .bg-sar { background: linear-gradient(135deg, #fbbf24, #d97706); color: #fff; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
         .bg-holo { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: 1px solid rgba(255,255,255,0.3); font-family: "Microsoft YaHei", sans-serif; }
 
-        /* --- 闪卡流光特效 (自动播放) --- */
+        /* --- 闪卡流光特效 --- */
         .holo-effect {
             position: absolute; inset: 0; pointer-events: none;
             opacity: 0.6; 
@@ -111,6 +107,13 @@
         input[type=range]::-moz-range-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
+
+        /* === 核心新增：全屏查看器动画 === */
+        .zoom-enter-active, .zoom-leave-active { transition: opacity 0.3s ease; }
+        .zoom-enter-from, .zoom-leave-to { opacity: 0; }
+        
+        .zoom-card-enter-active, .zoom-card-leave-active { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .zoom-card-enter-from, .zoom-card-leave-to { transform: scale(0.5); opacity: 0; }
     </style>
 </head>
 <body>
@@ -119,12 +122,36 @@
     <div class="bg-mesh"></div>
     <div v-if="showFlash" class="flash-overlay"></div>
 
+    <!-- ==================== 全屏查看器 (新增) ==================== -->
+    <transition name="zoom">
+        <div v-if="zoomedCard" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" @click="zoomedCard = null">
+            <transition name="zoom-card" appear>
+                <!-- 放大后的卡牌容器 -->
+                <div class="relative w-full max-w-sm aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl cursor-zoom-out border border-white/20" @click.stop="zoomedCard = null">
+                    <!-- 图片 -->
+                    <img :src="zoomedCard.url" class="w-full h-full object-fill">
+                    
+                    <!-- 标签 (放大时也显示) -->
+                    <div v-if="zoomedCard.suffix === 'a'" class="rarity-badge bg-ar !text-sm !px-3 !py-1 !bottom-4 !right-4">AR</div>
+                    <div v-else-if="zoomedCard.suffix === 'b'" class="rarity-badge bg-sar !text-sm !px-3 !py-1 !bottom-4 !right-4">SAR</div>
+                    <div v-else-if="zoomedCard.isHolo" class="rarity-badge bg-holo !text-sm !px-3 !py-1 !bottom-4 !right-4">闪</div>
+
+                    <!-- 闪光特效 (放大时更明显) -->
+                    <div v-if="zoomedCard.isHolo || zoomedCard.suffix" class="holo-effect !opacity-40"></div>
+                </div>
+            </transition>
+            <!-- 提示文字 -->
+            <div class="absolute bottom-10 text-white/50 text-sm pointer-events-none">点击任意处关闭</div>
+        </div>
+    </transition>
+    <!-- ========================================================= -->
+
     <!-- 1. 选包界面 -->
     <div v-if="view === 'SELECT'" class="w-full max-w-5xl animate__animated animate__fadeIn">
         <h1 class="text-4xl md:text-5xl font-black italic text-center mb-4 tracking-tighter text-white drop-shadow-lg">
             选择你的 <span class="text-yellow-400">扩展包</span>
         </h1>
-        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm"></p>
+        <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm invisible select-none">抽你卡</p>
         
         <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
@@ -167,17 +194,18 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                <div class="flex items-center justify-between mb-6 bg-slate-800 p-3 rounded-xl border border-slate-700 overflow-visible">
                     <div class="flex items-center gap-2">
-                        <span class="text-xl">⚡</span>
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/25.svg" 
+                             class="w-14 h-14 object-contain drop-shadow-md">
                         <div class="flex flex-col">
-                            <span class="text-xs font-bold text-white">必出皮卡丘</span>
-                            <span class="text-[10px] text-slate-400">其中一张必定是皮卡超</span>
+                            <span class="text-sm font-bold text-white">必出皮卡丘</span>
+                            <span class="text-[10px] text-slate-400 mt-0.5">其中一张必定是皮卡超</span>
                         </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
                         <input type="checkbox" v-model="guaranteePikachu" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400"></div>
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-400 shadow-inner"></div>
                     </label>
                 </div>
 
@@ -187,7 +215,6 @@
                     <button @click="drawCount=10" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">10连</button>
                 </div>
 
-                <!-- 核心修改：新增返回按钮，双按钮布局 -->
                 <div class="flex gap-3">
                     <button @click="view = 'SELECT'" class="w-1/3 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition active:scale-95">返回</button>
                     <button @click="ripAction" class="w-2/3 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-lg transition shadow-lg active:scale-95">立即撕开</button>
@@ -207,7 +234,8 @@
 
             <div class="grid gap-3 md:gap-4 max-w-7xl mx-auto pb-24 justify-items-center transition-all duration-500" :class="layoutClass">
                 <div v-for="(card, i) in currentCards" :key="i" class="card-container">
-                    <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="card.revealed = true">
+                    <!-- 核心修改：@click 逻辑 -->
+                    <div class="card-inner" :class="{'is-flipped': card.revealed}" @click="handleCardClick(card)">
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
@@ -247,6 +275,9 @@
             const activePack = ref(null);
             const currentCards = ref([]);
             
+            // 新增：放大的卡片数据
+            const zoomedCard = ref(null);
+            
             const drawCount = ref(10); 
             const guaranteePikachu = ref(false); 
             const probAR = ref(10); 
@@ -275,6 +306,7 @@
                 isVibrating.value = false;
                 showFlash.value = false;
                 currentCards.value = [];
+                zoomedCard.value = null;
             };
 
             const ripAction = () => {
@@ -320,6 +352,17 @@
                 }, 600);
             };
 
+            // 核心修改：点击逻辑
+            const handleCardClick = (card) => {
+                if (!card.revealed) {
+                    // 如果没翻开，翻开它
+                    card.revealed = true;
+                } else {
+                    // 如果已经翻开，放大显示
+                    zoomedCard.value = card;
+                }
+            };
+
             const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
 
             const handleError = (card) => {
@@ -335,8 +378,8 @@
 
             return { 
                 view, packs, activePack, currentCards, drawCount, guaranteePikachu,
-                probAR, probSAR, isTearing, showFlash, layoutClass,
-                selectPack, ripAction, revealAll, handleError, 
+                probAR, probSAR, isTearing, showFlash, layoutClass, zoomedCard,
+                selectPack, ripAction, revealAll, handleError, handleCardClick,
                 isVibrating, isRipped, allRevealed 
             };
         }
