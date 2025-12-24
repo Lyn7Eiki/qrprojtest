@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>52poke 151全图鉴算号器 (1-209)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body { background: #181825; color: #cdd6f4; font-family: sans-serif; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+        .card-item { background: #1e1e2e; border: 1px solid #313244; border-radius: 8px; overflow: hidden; transition: 0.2s; position: relative;}
+        .card-item:hover { border-color: #89b4fa; transform: translateY(-2px); }
+        .img-box { aspect-ratio: 2.5/3.5; background: #11111b; display: flex; align-items: center; justify-content: center; position: relative; }
+        .img-box img { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* 状态指示条 */
+        .status-bar { height: 4px; width: 100%; position: absolute; bottom: 0; left: 0; }
+        .st-pending { background: #f9e2af; animation: pulse 1s infinite; }
+        .st-success { background: #a6e3a1; }
+        .st-error { background: #f38ba8; }
+        
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="min-h-screen p-6 flex flex-col items-center">
+
+<div id="app" class="w-full max-w-7xl space-y-6">
+    
+    <div class="text-center">
+        <h1 class="text-3xl font-black text-[#89b4fa]">52poke 全图鉴算号器</h1>
+        <p class="text-slate-400 text-xs mt-2 font-mono">范围扩大至 209 · 自动跳过空号 · 自动匹配 PNG/JPG</p>
+    </div>
+
+    <!-- 控制台 -->
+    <div class="bg-[#1e1e2e] p-5 rounded-2xl border border-[#313244] shadow-lg flex flex-wrap gap-4 items-end sticky top-4 z-50">
+        
+        <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-gray-400">文件前缀</span>
+            <input v-model="prefix" class="bg-[#11111b] border border-[#45475a] px-3 py-2 rounded text-white w-24 text-center font-mono focus:border-[#89b4fa] outline-none" placeholder="SV2aF">
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-gray-400">编号范围</span>
+            <div class="flex items-center gap-2">
+                <input v-model.number="startId" type="number" class="bg-[#11111b] border border-[#45475a] px-3 py-2 rounded text-white w-20 text-center focus:border-[#89b4fa] outline-none">
+                <span class="text-gray-500">-</span>
+                <!-- 默认改为 209 -->
+                <input v-model.number="endId" type="number" class="bg-[#11111b] border border-[#45475a] px-3 py-2 rounded text-white w-20 text-center focus:border-[#89b4fa] outline-none">
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-1 flex-1">
+            <span class="text-xs font-bold text-gray-400">
+                状态: <span v-if="successCount > 0" class="text-green-400">{{ successCount }} 成功</span> 
+                <span v-if="errorCount > 0" class="text-red-400 ml-2">{{ errorCount }} 空号/失败</span>
+            </span>
+            <div class="flex gap-2">
+                <button @click="generateLinks" :disabled="isWorking" class="flex-1 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] font-bold px-4 py-2 rounded transition disabled:opacity-50">
+                    {{ isWorking ? '正在扫描...' : '开始扫描' }}
+                </button>
+                <button v-if="successCount > 0" @click="downloadAll" :disabled="isDownloading" class="bg-[#a6e3a1] hover:bg-[#94e2d5] text-[#1e1e2e] font-bold px-4 py-2 rounded transition flex items-center gap-2 disabled:opacity-50">
+                    <span>{{ isDownloading ? '打包中...' : '下载成功图片' }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 列表 -->
+    <div class="card-grid w-full">
+        <div v-for="item in list" :key="item.id" class="card-item group">
+            <div class="img-box relative">
+                
+                <!-- 状态显示逻辑 -->
+                <div v-if="item.status === 'pending'" class="text-[#f9e2af] text-xs">计算中...</div>
+                
+                <div v-else-if="item.status === 'error'" class="flex flex-col items-center justify-center text-[#f38ba8] text-xs p-2 text-center opacity-50">
+                    <span class="text-xl mb-1">✕</span>
+                    <span>空号</span>
+                </div>
+                
+                <!-- 成功图片：去掉了右上角的格式标签 -->
+                <img v-else-if="item.status === 'success'" :src="item.url" referrerpolicy="no-referrer" loading="lazy">
+                
+                <!-- 编号浮层 -->
+                <div class="absolute top-1 left-1 bg-black/60 text-[10px] px-1.5 rounded text-white font-mono backdrop-blur-sm">
+                    {{ item.padId }}
+                </div>
+
+                <!-- 底部状态条 -->
+                <div class="status-bar" :class="'st-' + item.status"></div>
+            </div>
+            
+            <div class="p-2 bg-[#181825] flex justify-between items-center">
+                <div class="text-[10px] text-gray-500 truncate font-mono select-all">{{ item.filename }}</div>
+                <!-- 显示格式小圆点 -->
+                <div v-if="item.status === 'success'" class="w-2 h-2 rounded-full" :class="item.ext === '.png' ? 'bg-blue-500' : 'bg-yellow-500'" :title="item.ext"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const { createApp, ref, computed } = Vue;
+
+createApp({
+    setup() {
+        const prefix = ref('SV2aF');
+        const startId = ref(1);
+        const endId = ref(209); // 更新到 209
+        const list = ref([]);
+        const isWorking = ref(false);
+        const isDownloading = ref(false);
+
+        const successCount = computed(() => list.value.filter(i => i.status === 'success').length);
+        const errorCount = computed(() => list.value.filter(i => i.status === 'error').length);
+
+        // 核心算法：文件名 -> MD5 -> 路径
+        const calculateUrl = (filename) => {
+            const hash = md5(filename);
+            const p1 = hash.substring(0, 1);
+            const p2 = hash.substring(0, 2);
+            return `https://media.52poke.com/wiki/${p1}/${p2}/${filename}`;
+        };
+
+        const generateLinks = async () => {
+            isWorking.value = true;
+            list.value = [];
+            
+            const batch = [];
+            for (let i = startId.value; i <= endId.value; i++) {
+                const padId = String(i).padStart(3, '0');
+                
+                // 默认先猜 .png (151系列普通卡全是png)
+                // 到了 166 之后有很多异画是 jpg，代码里会自动纠错
+                const ext = '.png';
+                const filename = `${prefix.value}${padId}${ext}`;
+                const url = calculateUrl(filename);
+
+                const item = {
+                    id: i, padId, filename, url, ext,
+                    status: 'pending' 
+                };
+                batch.push(item);
+            }
+            list.value = batch;
+
+            // 并发检测
+            await checkImages(batch);
+            isWorking.value = false;
+        };
+
+        const checkImages = async (items) => {
+            const chunkSize = 10; // 并发数
+            for (let i = 0; i < items.length; i += chunkSize) {
+                const chunk = items.slice(i, i + chunkSize);
+                await Promise.all(chunk.map(checkSingleImage));
+                // 稍微延时，防止请求过快被服务器拒绝
+                await new Promise(r => setTimeout(r, 50)); 
+            }
+        };
+
+        const checkSingleImage = (item) => {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.referrerPolicy = 'no-referrer';
+                
+                img.onload = () => {
+                    item.status = 'success';
+                    resolve();
+                };
+                
+                img.onerror = () => {
+                    // PNG 失败了，自动尝试 JPG (很多 SAR/UR 是 jpg)
+                    if (item.ext === '.png') {
+                        item.ext = '.jpg';
+                        item.filename = `${prefix.value}${item.padId}.jpg`;
+                        item.url = calculateUrl(item.filename);
+                        
+                        // 二次尝试
+                        const img2 = new Image();
+                        img2.referrerPolicy = 'no-referrer';
+                        img2.onload = () => { item.status = 'success'; resolve(); };
+                        img2.onerror = () => { 
+                            item.status = 'error'; // 彻底失败，说明该编号确实不存在(如208)
+                            resolve(); 
+                        }; 
+                        img2.src = item.url;
+                    } else {
+                        item.status = 'error';
+                        resolve();
+                    }
+                };
+                img.src = item.url;
+            });
+        };
+
+        const downloadAll = async () => {
+            if (isDownloading.value) return;
+            isDownloading.value = true;
+
+            const zip = new JSZip();
+            const folder = zip.folder("52poke_151_full");
+            
+            // 过滤掉空号，只下载成功的
+            const targets = list.value.filter(i => i.status === 'success');
+            
+            for (const item of targets) {
+                try {
+                    // 使用 corsproxy 下载，确保不跨域
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(item.url)}`;
+                    const res = await fetch(proxyUrl);
+                    const blob = await res.blob();
+                    folder.file(item.filename, blob);
+                } catch (e) {
+                    console.error("下载失败", item.filename);
+                }
+            }
+
+            try {
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, `52poke_${prefix.value}_${targets.length}张.zip`);
+            } catch (e) {
+                alert("打包失败");
+            } finally {
+                isDownloading.value = false;
+            }
+        };
+
+        return { 
+            prefix, startId, endId, list, isWorking, isDownloading, successCount, errorCount,
+            generateLinks, downloadAll
+        };
+    }
+}).mount('#app');
+</script>
+
+</body>
+</html>
