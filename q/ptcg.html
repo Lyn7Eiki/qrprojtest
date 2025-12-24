@@ -26,8 +26,9 @@
         .card-container {
             perspective: 1200px;
             aspect-ratio: 2.5 / 3.5;
-            width: 160px;
-            flex-shrink: 0;
+            width: 100%;
+            max-width: 180px; /* 限制最大宽度 */
+            margin: 0 auto;
         }
 
         .card-inner {
@@ -130,19 +131,14 @@
     <transition name="zoom">
         <div v-if="zoomedCard" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" @click="zoomedCard = null">
             <transition name="zoom-card" appear>
-                <!-- 放大后的卡牌容器 -->
                 <div class="relative w-full max-w-sm aspect-[2.5/3.5] rounded-xl overflow-hidden shadow-2xl cursor-zoom-out border border-white/20" @click.stop="zoomedCard = null">
-                    <!-- 图片 -->
                     <img :src="zoomedCard.url" class="w-full h-full object-fill">
-                    <!-- 闪光特效 (放大时保留) -->
                     <div v-if="zoomedCard.isHolo || zoomedCard.suffix" class="holo-effect !opacity-40"></div>
                 </div>
             </transition>
-            <!-- 提示文字 -->
             <div class="absolute bottom-10 text-white/50 text-sm pointer-events-none">点击任意处关闭</div>
         </div>
     </transition>
-    <!-- ========================================================= -->
 
     <!-- 1. 选包界面 -->
     <div v-if="view === 'SELECT'" class="w-full max-w-5xl animate__animated animate__fadeIn">
@@ -151,11 +147,11 @@
         </h1>
         <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm invisible select-none">抽你卡</p>
         
-        <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4">
+        <!-- 核心修改：改为 Grid 布局，强制 3 列，适配移动端一行显示 3 个 -->
+        <div class="grid grid-cols-3 gap-3 md:gap-16 px-2 max-w-4xl mx-auto justify-items-center">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
-                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
-                <!-- 核心修改：使用本地图片路径 -->
-                <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
+                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95 w-full max-w-[140px] md:max-w-[220px]">
+                <img :src="p.img" class="w-full drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
         </div>
@@ -164,7 +160,6 @@
     <!-- 2. 开包设置界面 -->
     <div v-if="view === 'OPENING'" class="w-full flex flex-col items-center">
         
-        <!-- 待撕开 -->
         <div v-if="!isRipped" class="relative flex flex-col items-center w-full max-w-md animate__animated animate__zoomIn">
             <div class="relative w-56 md:w-64 aspect-[2/3.5] cursor-pointer" @click="ripAction">
                 <img v-if="!isTearing" :src="activePack.img" class="w-full h-full object-contain absolute inset-0 z-10 transition-transform hover:scale-105" :class="{'pack-shake': isVibrating}">
@@ -180,7 +175,7 @@
                     <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
                     <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
                 </div>
-                <!-- 上限保持 30 -->
+                <!-- 核心修改：上限改为 30 -->
                 <input type="range" v-model.number="drawCount" min="1" max="30" step="1" class="mb-6">
                 
                 <div class="grid grid-cols-2 gap-4 mb-6">
@@ -211,10 +206,11 @@
                     </div>
                 </div>
 
-                <!-- 核心修改：改为 单抽、5连、10连 -->
                 <div class="flex justify-between gap-2 mb-4">
                     <button @click="drawCount=1" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">单抽</button>
+
                     <button @click="drawCount=5" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">5连</button>
+
                     <button @click="drawCount=10" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">10连</button>
                 </div>
 
@@ -241,13 +237,10 @@
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
-                            
                             <div v-if="card.suffix === 'a'" class="rarity-badge bg-ar">AR</div>
                             <div v-else-if="card.suffix === 'b'" class="rarity-badge bg-sar">SAR</div>
                             <div v-else-if="card.isHolo" class="rarity-badge bg-holo">闪</div>
-
                             <img :src="card.url" :class="{ 'loaded': card.isLoaded }" @load="card.isLoaded = true" @error="handleError(card)">
-                            
                             <div v-if="card.isHolo || card.suffix" class="holo-effect"></div>
                         </div>
                     </div>
@@ -278,7 +271,7 @@
             const currentCards = ref([]);
             const zoomedCard = ref(null);
             
-            // 默认值设为 9
+            // 核心修改：默认值为 9
             const drawCount = ref(9); 
             const guaranteePikachu = ref(false); 
             const probAR = ref(10); 
@@ -290,13 +283,24 @@
                 { id: 'gem', img: './base3.webp' }
             ];
 
+            // 核心修改：智能布局算法
             const layoutClass = computed(() => {
                 const count = currentCards.value.length;
-                if (count === 10) return 'grid-cols-2 md:grid-cols-5';
-                if (count === 9) return 'grid-cols-3 md:grid-cols-3';
-                if (count === 5) return 'grid-cols-3 md:grid-cols-5';
-                if (count <= 4) return 'grid-cols-2 md:grid-cols-4';
-                return 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+                
+                // 桌面端 (md): 优先大横排
+                let desk = 'md:grid-cols-5'; // 默认5列
+                if (count === 27) desk = 'md:grid-cols-9'; // 3x9
+                else if (count === 9) desk = 'md:grid-cols-3'; // 3x3
+                else if (count % 6 === 0) desk = 'md:grid-cols-6';
+                else if (count <= 4) desk = 'md:grid-cols-4';
+
+                // 移动端: 优先3列，少时2列
+                let mobile = 'grid-cols-3'; // 默认3列
+                if (count === 10) mobile = 'grid-cols-2'; // 2x5 (特别要求)
+                else if (count === 4 || count === 2) mobile = 'grid-cols-2';
+                else if (count === 1) mobile = 'grid-cols-1';
+
+                return `${mobile} ${desk}`;
             });
 
             const selectPack = (pack) => {
@@ -308,7 +312,7 @@
                 showFlash.value = false;
                 currentCards.value = [];
                 zoomedCard.value = null;
-                // 每次选包重置为 9
+                // 核心修改：重置为 9
                 drawCount.value = 9;
             };
 
