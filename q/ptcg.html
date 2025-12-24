@@ -26,9 +26,8 @@
         .card-container {
             perspective: 1200px;
             aspect-ratio: 2.5 / 3.5;
-            width: 100%;
-            max-width: 180px; /* 限制最大宽度 */
-            margin: 0 auto;
+            width: 160px;
+            flex-shrink: 0;
         }
 
         .card-inner {
@@ -116,9 +115,30 @@
         /* === 全屏查看器动画 === */
         .zoom-enter-active, .zoom-leave-active { transition: opacity 0.3s ease; }
         .zoom-enter-from, .zoom-leave-to { opacity: 0; }
-        
         .zoom-card-enter-active, .zoom-card-leave-active { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .zoom-card-enter-from, .zoom-card-leave-to { transform: scale(0.5); opacity: 0; }
+        
+        /* 隐藏滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        
+        /* NEW 标签动画 */
+        .bg-new { 
+            background: linear-gradient(135deg, #f43f5e, #e11d48); 
+            color: white; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 0 8px rgba(244, 63, 94, 0.6);
+            animation: pulse-new 2s infinite;
+        }
+        @keyframes pulse-new { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        
+        /* 标签基础 */
+        .badge-base {
+            position: absolute; font-size: 10px; font-weight: 900; padding: 1px 6px;
+            border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.6); z-index: 20;
+            letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); pointer-events: none;
+        }
+        .pos-br { bottom: 6px; right: 6px; }
+        .pos-tl { top: 6px; left: 6px; }
     </style>
 </head>
 <body>
@@ -147,13 +167,20 @@
         </h1>
         <p class="text-center text-blue-300 mb-12 font-bold tracking-widest text-sm invisible select-none">抽你卡</p>
         
-        <!-- 核心修改：改为 Grid 布局，强制 3 列，适配移动端一行显示 3 个 -->
-        <div class="grid grid-cols-3 gap-3 md:gap-16 px-2 max-w-4xl mx-auto justify-items-center">
+        <div class="flex flex-wrap justify-center gap-8 md:gap-16 px-4 mb-10">
             <div v-for="p in packs" :key="p.id" @click="selectPack(p)" 
-                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95 w-full max-w-[140px] md:max-w-[220px]">
-                <img :src="p.img" class="w-full drop-shadow-2xl">
+                 class="cursor-pointer group relative transition-transform duration-300 hover:scale-105 active:scale-95">
+                <img :src="p.img" class="w-48 md:w-56 drop-shadow-2xl">
                 <div class="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full"></div>
             </div>
+        </div>
+
+        <div class="text-center">
+            <button @click="openGallery" class="bg-slate-800 border border-slate-600 px-8 py-3 rounded-full font-bold hover:bg-slate-700 transition shadow-lg flex items-center gap-2 mx-auto">
+                <span>📖</span> 查看图鉴 
+                <!-- 核心修改：只显示收集数 -->
+                <span class="text-yellow-400 text-sm ml-1">{{ collectedCount }}</span>
+            </button>
         </div>
     </div>
 
@@ -175,7 +202,6 @@
                     <span class="text-xs font-bold text-slate-400 uppercase">抽卡数量</span>
                     <span class="text-2xl font-black text-yellow-400">{{ drawCount }}</span>
                 </div>
-                <!-- 核心修改：上限改为 30 -->
                 <input type="range" v-model.number="drawCount" min="1" max="30" step="1" class="mb-6">
                 
                 <div class="grid grid-cols-2 gap-4 mb-6">
@@ -208,9 +234,7 @@
 
                 <div class="flex justify-between gap-2 mb-4">
                     <button @click="drawCount=1" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">单抽</button>
-
                     <button @click="drawCount=5" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">5连</button>
-
                     <button @click="drawCount=10" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold transition">10连</button>
                 </div>
 
@@ -237,10 +261,16 @@
                         <div class="card-face card-back"></div>
                         <div class="card-face card-front relative">
                             <div v-if="!card.isLoaded" class="loading-pulse"></div>
-                            <div v-if="card.suffix === 'a'" class="rarity-badge bg-ar">AR</div>
-                            <div v-else-if="card.suffix === 'b'" class="rarity-badge bg-sar">SAR</div>
-                            <div v-else-if="card.isHolo" class="rarity-badge bg-holo">闪</div>
+                            
+                            <div v-if="card.suffix === 'a'" class="badge-base bg-ar pos-br">AR</div>
+                            <div v-else-if="card.suffix === 'b'" class="badge-base bg-sar pos-br">SAR</div>
+                            <div v-else-if="card.isHolo" class="badge-base bg-holo pos-br">闪</div>
+                            
+                            <!-- NEW 标签 (左上角) -->
+                            <div v-if="card.isNew" class="badge-base bg-new pos-tl">NEW</div>
+
                             <img :src="card.url" :class="{ 'loaded': card.isLoaded }" @load="card.isLoaded = true" @error="handleError(card)">
+                            
                             <div v-if="card.isHolo || card.suffix" class="holo-effect"></div>
                         </div>
                     </div>
@@ -255,10 +285,53 @@
             </div>
         </div>
     </div>
+
+    <!-- ================== 4. 图鉴界面 ================== -->
+    <div v-if="view === 'GALLERY'" class="fixed inset-0 z-50 bg-[#0f172a] flex flex-col">
+        <div class="bg-[#0f172a]/95 backdrop-blur px-4 py-3 border-b border-slate-800 shadow-xl flex items-center gap-4 flex-shrink-0">
+            <button @click="view = 'SELECT'" class="bg-slate-800 px-4 py-2 rounded-lg text-sm font-bold text-white hover:bg-slate-700 transition">
+                ← 返回
+            </button>
+            <div class="flex-1 text-center">
+                <h2 class="text-base font-bold text-white">全图鉴收藏</h2>
+                <!-- 核心修改：只显示收集数，去掉总数 -->
+                <p class="text-[10px] text-gray-400 font-mono mt-0.5">
+                    已收集: <span class="text-yellow-400 font-bold text-lg">{{ collectedCount }}</span>
+                </p>
+            </div>
+            <button @click="resetData" class="text-xs text-red-500 hover:text-red-400 underline">重置</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll p-4">
+            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 md:gap-4 max-w-[1600px] mx-auto">
+                <div v-for="card in galleryDisplayList" :key="card.uniqueId" class="relative aspect-[2.5/3.5]">
+                    
+                    <div v-if="collectedSet.has(card.uniqueId)" 
+                         @click="zoomedCard = card"
+                         class="w-full h-full rounded-lg overflow-hidden border border-slate-700 relative group transition hover:scale-105 hover:z-10 hover:border-yellow-400 cursor-zoom-in shadow-lg">
+                        
+                        <img loading="lazy" :src="card.url" class="w-full h-full object-fill">
+                        <div v-if="card.suffix" class="holo-effect"></div>
+                        <div class="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] md:text-[10px] text-center text-gray-300 font-mono py-0.5 backdrop-blur-sm">
+                            #{{ card.id }}<span v-if="card.suffix" class="uppercase text-yellow-400 font-bold ml-0.5">{{ card.suffix }}</span>
+                        </div>
+                    </div>
+
+                    <div v-else class="card-locked group cursor-not-allowed opacity-60 hover:opacity-80 transition">
+                        <!-- 去掉问号 -->
+                        <div class="absolute bottom-2 text-[10px] text-gray-600 font-mono opacity-0 group-hover:opacity-100 transition">#{{ card.id }}</div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="h-10"></div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    const { createApp, ref, computed } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     createApp({
         setup() {
@@ -271,7 +344,6 @@
             const currentCards = ref([]);
             const zoomedCard = ref(null);
             
-            // 核心修改：默认值为 9
             const drawCount = ref(9); 
             const guaranteePikachu = ref(false); 
             const probAR = ref(10); 
@@ -283,24 +355,55 @@
                 { id: 'gem', img: './base3.webp' }
             ];
 
-            // 核心修改：智能布局算法
+            const collectedSet = ref(new Set());
+            // 基础卡列表
+            const baseList = [];
+            for (let i = 1; i <= 151; i++) {
+                const padId = String(i).padStart(3, '0');
+                const baseUrl = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}`;
+                baseList.push({ uniqueId: padId, id: padId, suffix: '', url: `${baseUrl}.png` });
+            }
+
+            // 动态图鉴列表
+            const galleryDisplayList = computed(() => {
+                let display = [];
+                baseList.forEach(baseCard => {
+                    display.push(baseCard);
+                    const idA = baseCard.id + 'a';
+                    if (collectedSet.value.has(idA)) {
+                        display.push({ 
+                            uniqueId: idA, id: baseCard.id, suffix: 'a', 
+                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}a.png` 
+                        });
+                    }
+                    const idB = baseCard.id + 'b';
+                    if (collectedSet.value.has(idB)) {
+                        display.push({ 
+                            uniqueId: idB, id: baseCard.id, suffix: 'b', 
+                            url: `https://static.campaignchowsangsang.com/pokemon/151/big/151_${baseCard.id}b.png` 
+                        });
+                    }
+                });
+                return display;
+            });
+
+            const collectedCount = computed(() => collectedSet.value.size);
+
+            const loadSave = () => {
+                const saved = localStorage.getItem('ptcg_collection');
+                if (saved) collectedSet.value = new Set(JSON.parse(saved));
+            };
+            const saveProgress = () => {
+                localStorage.setItem('ptcg_collection', JSON.stringify([...collectedSet.value]));
+            };
+
             const layoutClass = computed(() => {
                 const count = currentCards.value.length;
-                
-                // 桌面端 (md): 优先大横排
-                let desk = 'md:grid-cols-5'; // 默认5列
-                if (count === 27) desk = 'md:grid-cols-9'; // 3x9
-                else if (count === 9) desk = 'md:grid-cols-3'; // 3x3
-                else if (count % 6 === 0) desk = 'md:grid-cols-6';
-                else if (count <= 4) desk = 'md:grid-cols-4';
-
-                // 移动端: 优先3列，少时2列
-                let mobile = 'grid-cols-3'; // 默认3列
-                if (count === 10) mobile = 'grid-cols-2'; // 2x5 (特别要求)
-                else if (count === 4 || count === 2) mobile = 'grid-cols-2';
-                else if (count === 1) mobile = 'grid-cols-1';
-
-                return `${mobile} ${desk}`;
+                if (count === 10) return 'grid-cols-2 md:grid-cols-5';
+                if (count === 9) return 'grid-cols-3 md:grid-cols-3';
+                if (count === 5) return 'grid-cols-3 md:grid-cols-5';
+                if (count <= 4) return 'grid-cols-2 md:grid-cols-4';
+                return 'grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
             });
 
             const selectPack = (pack) => {
@@ -312,7 +415,6 @@
                 showFlash.value = false;
                 currentCards.value = [];
                 zoomedCard.value = null;
-                // 核心修改：重置为 9
                 drawCount.value = 9;
             };
 
@@ -340,11 +442,41 @@
                     else if (rand < (rateSAR + rateAR)) { suffix = 'a'; isHolo = true; } 
                     else { suffix = ''; isHolo = id === 25 ? true : Math.random() > 0.8; }
 
-                    const url = `https://special.pokemon.cn/151/img/big/151_${padId}${suffix}.png`;
-                    cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo });
+                    const url = `https://static.campaignchowsangsang.com/pokemon/151/big/151_${padId}${suffix}.png`;
+                    const uniqueId = padId + suffix;
+                    
+                    let isNew = false;
+                    if (!collectedSet.value.has(uniqueId)) {
+                        collectedSet.value.add(uniqueId);
+                        isNew = true;
+                    }
+
+                    cards.push({ id: padId, suffix, url, revealed: false, isLoaded: false, isHolo, isNew, uniqueId });
                 }
+                
+                saveProgress();
                 currentCards.value = cards;
-                cards.forEach(c => { const img = new Image(); img.src = c.url; });
+
+                cards.forEach(c => { 
+                    const img = new Image(); 
+                    img.src = c.url; 
+                    img.onerror = () => {
+                        if(c.isNew) {
+                            collectedSet.value.delete(c.uniqueId);
+                            c.isNew = false;
+                        }
+                        c.url = c.url.replace(/[ab]\.png/, '.png');
+                        c.suffix = '';
+                        c.isHolo = false;
+                        
+                        c.uniqueId = c.id;
+                        if (!collectedSet.value.has(c.uniqueId)) {
+                            collectedSet.value.add(c.uniqueId);
+                            c.isNew = true;
+                        }
+                        saveProgress();
+                    };
+                });
 
                 setTimeout(() => {
                     isVibrating.value = false;
@@ -360,11 +492,8 @@
             };
 
             const handleCardClick = (card) => {
-                if (!card.revealed) {
-                    card.revealed = true;
-                } else {
-                    zoomedCard.value = card;
-                }
+                if (!card.revealed) card.revealed = true;
+                else zoomedCard.value = card;
             };
 
             const revealAll = () => { currentCards.value.forEach(c => c.revealed = true); };
@@ -376,15 +505,28 @@
                 else { card.url = 'https://special.pokemon.cn/151/img/big/151_001.png'; }
             };
 
+            const openGallery = () => { view.value = 'GALLERY'; };
+            const resetData = () => {
+                if(confirm('确定要清空所有收集进度吗？')) {
+                    collectedSet.value.clear();
+                    saveProgress();
+                }
+            };
+
             const allRevealed = computed(() => {
                 return currentCards.value.length > 0 && currentCards.value.every(c => c.revealed);
+            });
+
+            onMounted(() => {
+                loadSave();
             });
 
             return { 
                 view, packs, activePack, currentCards, drawCount, guaranteePikachu,
                 probAR, probSAR, isTearing, showFlash, layoutClass, zoomedCard,
                 selectPack, ripAction, revealAll, handleError, handleCardClick,
-                isVibrating, isRipped, allRevealed 
+                isVibrating, isRipped, allRevealed,
+                galleryDisplayList, collectedSet, collectedCount, openGallery, resetData
             };
         }
     }).mount('#app');
