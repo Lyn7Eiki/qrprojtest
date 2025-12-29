@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silky Smooth Fan Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #3559c0;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            /* 开启3D视口，提升整体合成层性能 */
+            perspective: 1000px;
+        }
+
+        .card-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform: translateY(-50px);
+            /* 容器层级优化 */
+            transform-style: preserve-3d;
+        }
+
+        :root {
+            --card-width: 200px;
+            --card-height: 280px;
+            --step: 230px; 
+        }
+
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background-color: #fff;
+            border-radius: 12px;
+            
+            /* 静态阴影，避免动画时重绘阴影 */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+            
+            position: absolute;
+            left: 50%; 
+            top: 50%;
+            
+            /* 
+               关键优化 1：初始状态居中，Z轴归零。
+               使用 translate3d 强制开启 GPU 加速
+            */
+            transform: translate3d(-50%, -50%, 0);
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: rgba(0,0,0,0.3);
+            user-select: none;
+            cursor: pointer;
+
+            /* 
+               关键优化 2：
+               只对 transform 和 opacity 进行过渡。
+               时间缩短到 0.4s 提升跟手感。
+            */
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s;
+            
+            /* 关键优化 3：通知浏览器该元素即将发生变化 */
+            will-change: transform, opacity;
+            /* 避免旋转时的锯齿 */
+            backface-visibility: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 
+           ================================================================
+           高性能布局逻辑：
+           不再改变 left 值，而是直接计算 X 轴的 translate3d 偏移量。
+           计算公式： X偏移 = (步进 * 位置索引) - 50%(自身宽度)
+           ================================================================
+        */
+
+        /* Center (0) */
+        .card[data-pos="0"] {
+            z-index: 10;
+            /* scale 1.1 -> 1.15 增加对比度，去除 transform 中的 translateY */
+            transform: translate3d(-50%, -50%, 0) scale(1.15);
+            opacity: 1;
+            /* 选中态样式 */
+            color: rgba(53, 89, 192, 0.8);
+            background: #fff; /* 保持纯白高亮 */
+            box-shadow: 0 25px 50px rgba(0,0,0,0.35); /* 仅在静止状态改变阴影稍微安全点，或者干脆不改 */
+        }
+
+        /* --- 右侧 (Positive) --- */
+        /* Pos 1: X = +230px */
+        .card[data-pos="1"] {
+            z-index: 9;
+            transform: translate3d(calc(-50% + var(--step)), calc(-50% + 20px), 0) rotate(5deg);
+            opacity: 1;
+        }
+        /* Pos 2: X = +460px */
+        .card[data-pos="2"] {
+            z-index: 8;
+            transform: translate3d(calc(-50% + var(--step) * 2), calc(-50% + 60px), 0) rotate(10deg);
+            opacity: 1;
+        }
+        /* Pos 3: X = +690px */
+        .card[data-pos="3"] {
+            z-index: 7;
+            transform: translate3d(calc(-50% + var(--step) * 3), calc(-50% + 120px), 0) rotate(15deg);
+            opacity: 1;
+        }
+        /* Pos 4 (Hidden Right): X = +920px */
+        .card[data-pos="4"] {
+            z-index: 0;
+            transform: translate3d(calc(-50% + var(--step) * 4), calc(-50% + 120px), 0) rotate(20deg);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- 左侧 (Negative) --- */
+        /* Pos -1: X = -230px */
+        .card[data-pos="-1"] {
+            z-index: 9;
+            transform: translate3d(calc(-50% - var(--step)), calc(-50% + 20px), 0) rotate(-5deg);
+            opacity: 1;
+        }
+        /* Pos -2: X = -460px */
+        .card[data-pos="-2"] {
+            z-index: 8;
+            transform: translate3d(calc(-50% - var(--step) * 2), calc(-50% + 60px), 0) rotate(-10deg);
+            opacity: 1;
+        }
+        /* Pos -3: X = -690px */
+        .card[data-pos="-3"] {
+            z-index: 7;
+            transform: translate3d(calc(-50% - var(--step) * 3), calc(-50% + 120px), 0) rotate(-15deg);
+            opacity: 1;
+        }
+        /* Pos -4 (Hidden Left): X = -920px */
+        .card[data-pos="-4"] {
+            z-index: 0;
+            transform: translate3d(calc(-50% - var(--step) * 4), calc(-50% + 120px), 0) rotate(-20deg);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 控件样式优化 */
+        .controls {
+            position: absolute;
+            bottom: 50px;
+            display: flex;
+            gap: 40px;
+            z-index: 100;
+        }
+
+        button {
+            padding: 14px 36px;
+            border-radius: 30px;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+        button:hover {
+            background: rgba(255,255,255,0.9);
+            color: #3559c0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container" id="container"></div>
+
+    <div class="controls">
+        <button id="prevBtn">← PREV</button>
+        <button id="nextBtn">NEXT →</button>
+    </div>
+
+    <script>
+        const container = document.getElementById('container');
+        const totalCards = 14; 
+        // 预定义颜色，移除动态计算开销
+        const colors = [
+            '#FF9F43', '#FECA57', '#FF6B6B', '#48DBFB', 
+            '#1DD1A1', '#F368E0', '#00D2D3', '#54A0FF', 
+            '#5F27CD', '#C8D6E5', '#576574', '#222F3E'
+        ];
+        
+        let activeIndex = 0; 
+        // 防止快速点击导致的动画冲突
+        let isAnimating = false; 
+
+        function init() {
+            const fragment = document.createDocumentFragment(); // 使用 Fragment 减少 DOM 操作
+            
+            for (let i = 0; i < totalCards; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const num = (i + 1).toString().padStart(3, '0');
+                card.textContent = `#${num}`;
+                
+                // 静态背景设置
+                card.style.background = colors[i % colors.length];
+                
+                // 记录初始位置
+                card.dataset.lastPos = 0; 
+                card.setAttribute('data-pos', 'hidden'); // 初始状态隐藏
+
+                card.addEventListener('click', () => {
+                    const diff = getShortestDirection(activeIndex, i, totalCards);
+                    if (diff !== 0) {
+                        activeIndex = (activeIndex + diff + totalCards) % totalCards;
+                        update();
+                    }
+                });
+
+                fragment.appendChild(card);
+            }
+            container.appendChild(fragment);
+            
+            // 稍微延迟一下初始渲染，确保过渡效果正常
+            setTimeout(() => {
+                update();
+            }, 50);
+        }
+
+        function update() {
+            const cards = container.children;
+            
+            // 使用 requestAnimationFrame 确保在下一帧渲染前执行，更流畅
+            requestAnimationFrame(() => {
+                for (let i = 0; i < cards.length; i++) {
+                    const card = cards[i];
+                    const index = i;
+
+                    let diff = getShortestDirection(activeIndex, index, totalCards);
+                    
+                    // 范围限制逻辑 (-4 到 4)
+                    let targetPos = diff;
+                    if (diff > 4) targetPos = 4;
+                    if (diff < -4) targetPos = -4;
+
+                    const lastPos = parseInt(card.dataset.lastPos || 0);
+                    
+                    // 循环回绕检测
+                    const isWrapping = Math.abs(targetPos - lastPos) > 5; // 阈值设宽一点
+
+                    if (isWrapping) {
+                        // 1. 关闭动画
+                        card.style.transition = 'none';
+                        // 2. 瞬间移动到位
+                        card.setAttribute('data-pos', targetPos);
+                        
+                        // 3. 强制重绘 (Force Reflow)
+                        // 读取 offsetHeight 会强迫浏览器计算当前布局
+                        const _ = card.offsetHeight; 
+
+                        // 4. 恢复动画 (下一帧)
+                        requestAnimationFrame(() => {
+                            card.style.transition = ''; 
+                        });
+                    } else {
+                        // 正常移动
+                        card.setAttribute('data-pos', targetPos);
+                    }
+
+                    card.dataset.lastPos = targetPos;
+                }
+            });
+        }
+
+        function getShortestDirection(from, to, length) {
+            let diff = to - from;
+            if (diff > length / 2) diff -= length;
+            if (diff < -length / 2) diff += length;
+            return diff;
+        }
+
+        // 节流处理 (可选，防止疯点)
+        // 这里我没有加严格节流，保证响应快，但如果你觉得点太快会乱，可以解开注释
+        const handleNext = () => {
+             // if (isAnimating) return; 
+             // isAnimating = true; setTimeout(() => isAnimating = false, 200);
+            activeIndex = (activeIndex + 1) % totalCards;
+            update();
+        };
+
+        const handlePrev = () => {
+            activeIndex = (activeIndex - 1 + totalCards) % totalCards;
+            update();
+        };
+
+        document.getElementById('nextBtn').onclick = handleNext;
+        document.getElementById('prevBtn').onclick = handlePrev;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') handleNext();
+            if (e.key === 'ArrowLeft') handlePrev();
+        });
+
+        init();
+    </script>
+</body>
+</html>
