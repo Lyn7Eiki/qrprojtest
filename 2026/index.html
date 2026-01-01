@@ -35,7 +35,11 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: #1a1a1a; /* Solid background to remove banding */
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(255, 77, 77, 0.1) 0%,
+          rgba(26, 26, 26, 1) 70%
+        );
         z-index: 0;
         pointer-events: none;
       }
@@ -231,8 +235,32 @@
       </div>
 
       <div class="commentary">
-        It's really a <span class="highlight">new ma year</span> although the
-        year of the Horse still haven't come 🤣
+        It's really a
+        <span
+          class="highlight"
+          style="
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: bottom;
+            line-height: 1;
+            margin-bottom: -0.2em;
+          "
+        >
+          <span
+            style="
+              font-size: 0.5em;
+              color: #fff;
+              opacity: 0.8;
+              font-weight: normal;
+              margin-bottom: 2px;
+            "
+            >Niu Ma</span
+          >
+          <span>new ma</span>
+        </span>
+        <span class="highlight">year</span> although the year of the Horse still
+        haven't come 🤣
       </div>
 
       <div class="hero-text" id="heroTitle" onclick="confettiEffect(event)">
@@ -283,6 +311,3 @@
     </script>
   </body>
 </html>
-
-
-
