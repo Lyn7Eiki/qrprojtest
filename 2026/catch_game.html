@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>接住好运牛马</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #1a1a1a;
+        user-select: none;
+        touch-action: none; /* Prevent scroll on mobile */
+      }
+
+      #game-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(
+          circle at 50% 50%,
+          #2c3e50 0%,
+          #000000 100%
+        );
+        overflow: hidden;
+      }
+
+      #score-board {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: white;
+        font-size: 24px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px 20px;
+        border-radius: 15px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .score-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #basket {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 80px;
+        cursor: move;
+        z-index: 50;
+        text-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        transition: left 0.05s linear; /* Smooth movement */
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
+          sans-serif;
+      }
+
+      .falling-item {
+        position: absolute;
+        font-size: 40px;
+        top: -50px;
+        z-index: 10;
+        animation: rotate 2s linear infinite;
+      }
+
+      @keyframes rotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      #back-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: #ff4d4d;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        z-index: 100;
+      }
+
+      /* Overlay Styles */
+      #overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 200;
+        color: white;
+        text-align: center;
+      }
+
+      .btn-start {
+        padding: 15px 40px;
+        font-size: 24px;
+        background: linear-gradient(45deg, #ff4d4d, #ff9f43);
+        border: none;
+        color: white;
+        border-radius: 50px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: transform 0.2s;
+        box-shadow: 0 0 20px rgba(255, 77, 77, 0.4);
+      }
+
+      .btn-start:hover {
+        transform: scale(1.05);
+      }
+
+      .btn-back {
+        padding: 10px 30px;
+        font-size: 18px;
+        background: transparent;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: #ccc;
+        border-radius: 50px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: all 0.2s;
+      }
+
+      .btn-back:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-color: white;
+      }
+
+      #timer-display {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 32px;
+        color: #ffeb3b;
+        font-weight: bold;
+        z-index: 100;
+        text-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="score-board">
+        <div class="score-item">🧧 <span id="score-money">0</span></div>
+        <div class="score-item">🐮 <span id="score-cow">0</span></div>
+        <div class="score-item">🐴 <span id="score-horse">0</span></div>
+        <div class="score-item">💼 <span id="score-work">0</span></div>
+        <div
+          style="
+            margin-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            padding-top: 5px;
+          "
+        >
+          Total:
+          <span id="score-total" style="color: #ffd700; font-weight: bold"
+            >0</span
+          >
+        </div>
+      </div>
+
+      <!-- Timer -->
+      <div id="timer-display">60</div>
+
+      <!-- Start/Game Over Overlay -->
+      <div id="overlay">
+        <h1 id="overlay-title" style="font-size: 3rem; margin-bottom: 0">
+          准备好了吗？
+        </h1>
+        <p id="overlay-desc" style="font-size: 1.2rem; color: #ccc">
+          接住 🧧 积累福气！
+        </p>
+        <button class="btn-start" onclick="startGame()">开始游戏</button>
+        <button
+          class="btn-back"
+          onclick="window.location.href='happy_new_ma_year.html'"
+        >
+          返回
+        </button>
+      </div>
+
+      <button id="back-btn" onclick="history.back()">返回</button>
+
+      <!-- The Catcher -->
+      <div id="basket">👐</div>
+    </div>
+
+    <script>
+      const container = document.getElementById("game-container");
+      const basket = document.getElementById("basket");
+
+      // State
+      const scores = {
+        "🧧": 0,
+        "🐮": 0,
+        "🐴": 0,
+        "💼": 0,
+      };
+      let totalScore = 0;
+
+      const items = ["🧧", "🐮", "🐴", "💼"];
+
+      // Game Control Variables
+      let gameInterval;
+      let timerInterval;
+      let isPlaying = false;
+      let timeLeft = 60;
+      let spawnRate = 1000;
+      let fallSpeed = 3;
+
+      // Movement Logic
+      let basketX = window.innerWidth / 2;
+
+      // Mouse/Touch Move
+      function updateBasketPosition(x) {
+        basketX = x;
+        // Clamp to screen
+        if (basketX < 40) basketX = 40;
+        if (basketX > window.innerWidth - 40) basketX = window.innerWidth - 40;
+        basket.style.left = basketX + "px";
+      }
+
+      container.addEventListener("mousemove", (e) => {
+        if (!isPlaying) return;
+        updateBasketPosition(e.clientX);
+      });
+
+      container.addEventListener(
+        "touchmove",
+        (e) => {
+          if (!isPlaying) return;
+          updateBasketPosition(e.touches[0].clientX);
+        },
+        { passive: true }
+      );
+
+      // Spawning items
+      function spawnItem() {
+        const itemChar = items[Math.floor(Math.random() * items.length)];
+        const el = document.createElement("div");
+        el.classList.add("falling-item");
+        el.innerText = itemChar;
+        el.dataset.type = itemChar;
+
+        // Random horizontal position
+        const startX = Math.random() * (window.innerWidth - 60) + 30;
+        el.style.left = startX + "px";
+        container.appendChild(el);
+
+        let itemY = -50;
+        const speed = Math.random() * 2 + fallSpeed; // Randomize speed slightly
+
+        // Animation Loop for this item
+        const fallInterval = setInterval(() => {
+          if (!document.body.contains(el)) {
+            clearInterval(fallInterval);
+            return;
+          }
+
+          if (!isPlaying) {
+            // Stop falling if game ends
+            clearInterval(fallInterval);
+            el.remove();
+            return;
+          }
+
+          itemY += speed;
+          el.style.top = itemY + "px";
+
+          // Check Collision
+          const basketRect = basket.getBoundingClientRect();
+          const itemRect = el.getBoundingClientRect();
+
+          // Simple rectangle collision
+          if (
+            itemRect.bottom >= basketRect.top + 20 && // Allow it to go "into" the bowl a bit
+            itemRect.top <= basketRect.bottom &&
+            itemRect.right >= basketRect.left + 20 &&
+            itemRect.left <= basketRect.right - 20
+          ) {
+            // Caught!
+            catchItem(itemChar, el);
+            clearInterval(fallInterval);
+          } else if (itemY > window.innerHeight) {
+            // Missed
+            el.remove();
+            clearInterval(fallInterval);
+          }
+        }, 16);
+      }
+
+      function catchItem(type, element) {
+        // Visual feedback
+        element.style.transform = "scale(1.5)";
+        element.style.opacity = "0";
+        setTimeout(() => element.remove(), 200);
+
+        // Update Score
+        scores[type]++;
+        totalScore++;
+
+        updateDisplay();
+
+        // Difficulty ramp up
+        if (totalScore % 10 === 0) {
+          fallSpeed += 0.5;
+        }
+      }
+
+      function updateDisplay() {
+        document.getElementById("score-money").innerText = scores["🧧"];
+        document.getElementById("score-cow").innerText = scores["🐮"];
+        document.getElementById("score-horse").innerText = scores["🐴"];
+        document.getElementById("score-work").innerText = scores["💼"];
+        document.getElementById("score-total").innerText = totalScore;
+      }
+
+      // Start Game Loop
+      function startGame() {
+        if (isPlaying) return;
+
+        // Reset State
+        isPlaying = true;
+        timeLeft = 60;
+        totalScore = 0;
+        scores["🧧"] = 0;
+        scores["🐮"] = 0;
+        scores["🐴"] = 0;
+        scores["💼"] = 0;
+        fallSpeed = 3;
+
+        // UI Reset
+        updateDisplay();
+        document.getElementById("timer-display").innerText = timeLeft;
+        document.getElementById("overlay").style.display = "none";
+
+        // Remove any existing falling items
+        document.querySelectorAll(".falling-item").forEach((e) => e.remove());
+
+        // Start Timers
+        gameInterval = setInterval(spawnItem, 800);
+
+        timerInterval = setInterval(() => {
+          if (!isPlaying) return; // double check
+
+          timeLeft--;
+          document.getElementById("timer-display").innerText = timeLeft;
+
+          if (timeLeft <= 0) {
+            endGame();
+          }
+        }, 1000);
+      }
+
+      function endGame() {
+        isPlaying = false;
+        clearInterval(gameInterval);
+        clearInterval(timerInterval);
+
+        // Remove all falling items immediately
+        document.querySelectorAll(".falling-item").forEach((e) => e.remove());
+
+        // Show Overlay
+        const overlay = document.getElementById("overlay");
+        document.getElementById("overlay-title").innerText = "⏰ 时间到！";
+        document.getElementById(
+          "overlay-desc"
+        ).innerHTML = `最终得分: <span style="color:#ffd700; font-weight:bold; font-size:1.5em">${totalScore}</span><br>
+             🧧${scores["🧧"]} 🐮${scores["🐮"]} 🐴${scores["🐴"]} 💼${scores["💼"]}`;
+
+        const btn = overlay.querySelector("button");
+        btn.innerText = "再玩一次";
+
+        overlay.style.display = "flex";
+      }
+    </script>
+  </body>
+</html>
